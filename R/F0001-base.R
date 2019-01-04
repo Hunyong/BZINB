@@ -66,7 +66,6 @@ if (FALSE) {
 }
 
 
-# remove global assign later !!!! <<- 
 pairwise.MLE <- function(data, ML.fun, nondata.col = 1, p.nonzero = TRUE, rm.id.vec = TRUE, print.each.pair=TRUE, ...) {
   # data: a dataframe of which pairs are to be analyzed
   # nondata.col: the column number to be ignored for measurement eg. first col (gene names)
@@ -91,8 +90,7 @@ pairwise.MLE <- function(data, ML.fun, nondata.col = 1, p.nonzero = TRUE, rm.id.
     y <- data[s[2],]
     tt(1)
     print(c(Estimated.pair = s))
-    tmp.sss <<- s   # debug
-    tmp.aaa <<- cbind(x,y)   # debug
+    
     # result <- ML.fun(xvec = x, yvec = y, ...)
     #result <- ifelse(class(result)=="try-error",rep(NA,length(ML.fun(xvec = 0, yvec = 0, ...))), result)   %>% print
     result <- try(ML.fun(xvec = x, yvec = y, ...),silent=TRUE)
@@ -102,7 +100,7 @@ pairwise.MLE <- function(data, ML.fun, nondata.col = 1, p.nonzero = TRUE, rm.id.
     if (print.each.pair) {print(result); print(tt(2))}
     return(result)
   })
-  tmp.bbbb <<- MLE
+  
   if (class(MLE) == "list") {MLE <- do.call(rbind, MLE)}
   else if (class(MLE) == "matrix") { MLE <- t(MLE)}
   comb <- cbind(comb, MLE)

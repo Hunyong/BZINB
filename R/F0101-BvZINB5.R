@@ -128,9 +128,6 @@ dBvZINB5.Expt <- function(x, y, a0, a1, a2, b1, b2, p1, p2, p3, p4, debug = FALS
     l.C.mat <- sapply(0:x, function(k) sapply(0:y, l1.C, k = k, adjj = adj.C))  # %>% print
     l.AC.mat <- sapply(0:x, function(k) sapply(0:y, l1.AC, k = k, adjj = adj.C + adj.A))
     sum.AC <- sum(l.AC.mat)
-    # abcde.1 <<- l.A.mat
-    # abcde.2 <<- l.C.mat
-    # abcde.3 <<- l.AC.mat
   }
   sum.A <- sum(l.A.mat)
   l.sum <- sum.AC * l1.B + sum.A * sum (l2.B +  l3.B +  l4.B) * exp(-adj.C)
@@ -138,7 +135,6 @@ dBvZINB5.Expt <- function(x, y, a0, a1, a2, b1, b2, p1, p2, p3, p4, debug = FALS
     adj.sum = -floor(log(sum.AC)*2/3 + log(l1.B)*2/3)
     if (debug) cat("adjustment activated for l.sum (adj = ", adj.sum, ")\n")
     l.sum <- sum.AC * exp(adj.sum) * l1.B + sum.A * (exp(adj.sum) * sum (l2.B +  l3.B +  l4.B)) * exp(-adj.C)
-    # abcde.4 <<- c(l.sum = l.sum, sum.AC = sum.AC, l1.B = l1.B, sum.A = sum.A,  l2.B = l2.B, l3.B = l3.B, l4.B = l4.B, adj.C = adj.C)
     ## paranthesis matters. sum.A = some number, exp(adj.sum) = almost inf, sum(l2.B +  l3.B +  l4.B) = 0, ...
     # Then without paranthesis, Inf * 0 = NaN,
     # But with paranthesis, c * (large number * 0) = c * 0 = 0
@@ -344,7 +340,7 @@ ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol=1e-8, maxiter=200, 
     } else {return(cbind(candidate,lik))}
   }
   
-  cor.trace <<- data.frame(iter=1, pureCor=1)
+  # cor.trace <<- data.frame(iter=1, pureCor=1)
   iter = 0
   param = initial
   lik = Inf
@@ -359,20 +355,17 @@ ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol=1e-8, maxiter=200, 
   repeat {
     iter = iter + 1
     param.old <- param # saving old parameters
-abcd.old <<- param.old
     if (debug) {lik.old <- lik} #debugging
     pureCor.old <- pureCor
     # updating
 # cat(449)
     expt <- do.call(dBvZINB5.Expt.vec, c(list(xy.reduced$x, xy.reduced$y), as.list(param)))
-abc <<- expt
     expt <- as.vector(expt %*% xy.reduced$freq / n)
 # cat(453)
     # loglik = expt[1] * n
     delta <- expt[12] / (expt[2] + expt[4])                   # delta = E(V) / (E(xi0 + xi2))
     param[6:9] = expt[8:11]                                                    # pi = E(Z)
 # cat(457)
-abcd <<- param
     opt.vec <- function(par.ab) {
       par.ab <- exp(par.ab)
       r1 <- sum(expt[2:4]) - sum(par.ab[1:3]) * par.ab[4]
@@ -397,7 +390,7 @@ abcd <<- param
       lik <- lik.BvZINB5(xvec, yvec, param = param)  #debugging
       if (lik < lik.old) warnings("likelihood decreased!")
     }
-    cor.trace[iter,] <<- c(iter,pureCor)
+    # cor.trace[iter,] <<- c(iter,pureCor)
     if (showPlot & (iter %% 20 == 0)) {
       span <- min(max(iter-200+1,1),101):iter
       span2 <- max(iter-100+1,1):iter
@@ -417,7 +410,6 @@ abcd <<- param
       }
       if (iter == 10 + boost*5) {
         param.boost <- booster(param.boost, xvec, yvec, n.cand = min(max(5, index * 2),20))
-        tmp.bbbb <<-param.boost
         # print(dim(param.boost)); print(length(param.boost))
         if (showFlag) {print(param.boost)}
         

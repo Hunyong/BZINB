@@ -221,7 +221,6 @@ dev.BvNB3 <- function(xvec, yvec, param = NULL, a0 = NULL, a1 = NULL, a2= NULL, 
   ML.BvNB3.vec <- Vectorize(ML.BvNB3)
   param.sat <- t(ML.BvNB3.vec(xy.reduced$x, xy.reduced$y)) # %>%print
   param.sat <- do.call(rbind, param.sat)  #"matrix of lists" into "a matrix"
-  # tmp.a <<- param.sat ####
   lik.sat   <- sum(dBvNB3.vec(x= xy.reduced$x, y = xy.reduced$y, a0 = param.sat[,1], a1 = param.sat[,2], a2 = param.sat[,3], b1 = param.sat[,4], b2 = param.sat[,5],  log = TRUE) * xy.reduced$freq)
   
   return(data.frame(model.likelihood = lik.model, satrtd.likelihood = lik.sat, deviance = 2*(lik.sat - lik.model)))
