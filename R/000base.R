@@ -16,7 +16,7 @@ pairwise.dep <- function(data, measure, name, nondata.col = 1, p.nonzero = TRUE,
   # [lower.tri(matrix(1:dim.p^2,dim.p),TRUE),][,c(2,1)]
   # comb <- data.frame(t(combn(1:dim.p,2)))
   comb$pair <- apply(comb,1,function(x) paste(x,collapse="-"))
-  
+
   # function of a measurement
   fun.measure <- function(measure0, comb0 = comb, data0 = data, p.value0 = p.value, ...) {
     a <- sapply(1:dim(comb0)[1], function(i) {
@@ -36,7 +36,7 @@ pairwise.dep <- function(data, measure, name, nondata.col = 1, p.nonzero = TRUE,
   }
   if (class(measure) != "list") {measure <- list(measure)}
   ##sapply(measure, fun.measure)
-  
+
   storage <- list(); j = 0
   for (x in measure) {
     j = j + 1
@@ -46,7 +46,7 @@ pairwise.dep <- function(data, measure, name, nondata.col = 1, p.nonzero = TRUE,
   for (k in 1:length(measure)) {comb <- cbind(comb, unlist(storage[[k]]$point.est))}
   for (k in 1:length(measure)) {comb <- cbind(comb, unlist(storage[[k]]$p.val))}
   names(comb) <- c(1,2,"pair", name, paste0(name,".p.val"))
-  
+
   if (p.nonzero == TRUE) {
     n <- dim(data)[2]
     comb$non0.1 <- sapply(1:dim(comb)[1], function(i) {sum(data[comb[i,1],] != 0) / n})
@@ -79,7 +79,7 @@ pairwise.MLE <- function(data, ML.fun, nondata.col = 1, p.nonzero = TRUE, rm.id.
   # [lower.tri(matrix(1:dim.p^2,dim.p),TRUE),][,c(2,1)]
   # comb <- data.frame(t(combn(1:dim.p,2)))
   comb$pair <- apply(comb,1,function(x) paste(x,collapse="-"))
-  
+
   # empty.result <- ML.fun(xvec = rep(0,3), yvec = rep(0,3))
   # comb <- cbind(comb, matrix(ncol = dim(empty.result)[2]))
   # names(comb) <- c(1,2,"pair", names(empty.result))
@@ -90,7 +90,7 @@ pairwise.MLE <- function(data, ML.fun, nondata.col = 1, p.nonzero = TRUE, rm.id.
     y <- data[s[2],]
     tt(1)
     print(c(Estimated.pair = s))
-    
+
     # result <- ML.fun(xvec = x, yvec = y, ...)
     #result <- ifelse(class(result)=="try-error",rep(NA,length(ML.fun(xvec = 0, yvec = 0, ...))), result)   %>% print
     result <- try(ML.fun(xvec = x, yvec = y, ...),silent=TRUE)
@@ -100,67 +100,23 @@ pairwise.MLE <- function(data, ML.fun, nondata.col = 1, p.nonzero = TRUE, rm.id.
     if (print.each.pair) {print(result); print(tt(2))}
     return(result)
   })
-  
+
   if (class(MLE) == "list") {MLE <- do.call(rbind, MLE)}
   else if (class(MLE) == "matrix") { MLE <- t(MLE)}
   comb <- cbind(comb, MLE)
-  
+
   if (p.nonzero == TRUE) {
     n <- dim(data)[2]
     comb$non0.1 <- sapply(1:dim(comb)[1], function(i) {sum(data[comb[i,1],] != 0) / n})
     comb$non0.2 <- sapply(1:dim(comb)[1], function(i) {sum(data[comb[i,2],] != 0) / n})
     comb$non0.min <- pmin(comb$non0.1,comb$non0.2)
   }
-  
+
   return(comb)
 }
 if (FALSE) { # example
   head(pairwise.MLE(data=data[iset.Mm.c2[[1]],], ML.fun = ML.BvNB1))
 }
-
-extractor <- function(gene.no , geneset.no = 1, dat=data, nondata.col = 1, genesetlist = iset.Mm.c2) {
-  extracted <- dat[genesetlist[[geneset.no]][gene.no],-nondata.col]
-  extracted <- as.numeric(extracted)
-  return(extracted)
-}
-if (FALSE) {extractor(1)}
-
-# time calculator
-tt <- function(s){
-  if (s==1) {time.tmp <<- Sys.time() # record time
-  } else if (s==2) { # calculate time
-    return(data.frame(begin = time.tmp, end = Sys.time(), elapsed = Sys.time() - time.tmp))
-  }
-}
-
-tt.em <- function(s, step){
-  if (s==0) { # initialize
-    time.E.step <<- 0 # record time. initial
-    time.M.step <<- 0 # record time. initial
-    print("Time for E- and M-steps initialized.")
-  } else if (s==1) { # begin time
-    time.begin.tmp <<- Sys.time()
-  } else if (s==2) { # measure elapsed time
-    time.elapsed = Sys.time() - time.begin.tmp
-    if (step == "E") {
-      time.E.step <<- time.E.step + time.elapsed
-    } else if (step == "M") {
-      time.M.step <<- time.M.step + time.elapsed
-    } else warning("Wrong step was given. E or M should be given.")
-  } else if (s==3) {
-    print(c("E-step" = time.E.step, "M-step" = time.M.step))
-  }
-}
-if (FALSE) {
-  tt.em(0) # initialize
-  tt.em(1) # start measuring
-  tt.em(2, "E") # stack up times for E-step
-  tt.em(1)
-  tt.em(2, "M")
-  tt.em(3) # summary
-  
-}
-
 
 nonzero <- function(x, cut = .1) {
   len = length(x); above = names(which(x > cut)); len.a = length(above)
@@ -174,4 +130,18 @@ screen.zero <- function(data, geneset, cut = .1, output="which", exclude.col = 1
 screened.length <- function(data, geneset, cut = .1, exclude.col = 1) {
   screened.set = screen.zero(data = data, geneset = geneset, cut = cut, output="which", exclude.col = exclude.col)
   return(length(screened.set))
+}
+
+
+# binary profile function: for ML.BZIP.B
+bin.profile <- function(xvec, yvec) {
+  xvec[xvec != 0] = 1
+  yvec[yvec != 0] = 1
+  vec <- cbind(xvec,yvec)
+  a <- rep(0,4)
+  a[1] <- sum(apply(vec,1,prod)) # 1,1
+  a[2] <- sum(xvec) - a[1]       # 1,0
+  a[3] <- sum(yvec) - a[1]       # 0,1
+  a[4] <- length(xvec) - sum(a)  # 0,0
+  return(a)
 }
