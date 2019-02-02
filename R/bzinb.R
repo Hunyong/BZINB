@@ -49,15 +49,12 @@ if (FALSE) {
 
 #' @useDynLib bzinb
 #' @export
-dBvZINB5.Expt.cpp <- function(x, y, a0, a1, a2, b1, b2, p1, p2, p3, p4) {
+dBvZINB5.Expt.vec <- function(xvec, yvec, freq, n = sum(freq), a0, a1, a2, b1, b2, p1, p2, p3, p4) {
   result <- rep(0, 12)
-  dBvZINB_Expt(x, y, a0, a1, a2, b1, b2, p1, p2, p3, p4, result)
+  dBvZINB_Expt_vec(xvec, yvec, freq, n, a0, a1, a2, b1, b2, p1, p2, p3, p4, result)
   names(result) <- c("logdensity", paste0("R", 0:2, ".E"), paste0("log.R", 0:2, ".E"), paste0("E",1:4,".E"), "v.E")
   result
 }
-
-dBvZINB5.Expt.vec <- Vectorize(dBvZINB5.Expt.cpp)
-
 
 
 if (FALSE) {
@@ -155,8 +152,9 @@ ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol=1e-8, maxiter=200, 
     pureCor.old <- pureCor
     # updating
 # cat(449)
-    expt <- do.call(dBvZINB5.Expt.vec, c(list(xy.reduced$x, xy.reduced$y), as.list(param)))
-    expt <- as.vector(expt %*% xy.reduced$freq / n)
+    
+    expt <- do.call(dBvZINB5.Expt.vec, c(list(xy.reduced$x, xy.reduced$y, xy.reduced$freq), as.list(param)))
+    
 tmp.expt <<- expt
 # cat(453)
 # cat("sum(expt): ", expt, "\n")
@@ -255,6 +253,11 @@ tmp.expt <<- expt
 #' @useDynLib bzinb
 #' @export
 ML.BvZINB5 <- function(xvec, yvec, ...) {
+  if (!is.integer(xvec) | !is.integer(yvec)) stop("xvec and yvec should be integers.")
+  # nonnegative
+  # len(xvec) == len(yvec)
+  # any(is.na(xvec))
+  
   result <- try(ML.BvZINB5.base(xvec,yvec, ...))
   if (class(result)=="try-error") {
     result <- c(rep(NA,5+4), NA, 0)

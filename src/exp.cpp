@@ -74,22 +74,8 @@ long double log_R2_E3(int m, double a2)
 {
   return(boost::math::digamma(m + a2));
 }
-double po(double X,int Y)
-{
-  double Q = 1;
-  for(int i = 1;i <= Y;i++)
-  {
-    Q = Q * X;
-  }
-  return(Q);
-}
-double dnbinom(int k,int r, double p)
-{
-  return(exp(lgamma(r + k) - lgamma(r) - lgamma(k+1)) * po(p, r) * po((1-p), k));
-}
 
-// [[Rcpp::export]]
-void dBvZINB_Expt(int x, int y, double& a0, double& a1, double& a2,
+void dBvZINB_Expt(int& x, int& y, int& freq, double& a0, double& a1, double& a2,
                   double& b1, double& b2, double& p1, double& p2, double& p3, double& p4,
                   NumericVector& result)
 {
@@ -324,16 +310,43 @@ void dBvZINB_Expt(int x, int y, double& a0, double& a1, double& a2,
   long double v_E = xx + yy;
   v_E= v_E*1.0/l_sum;*/
 
-  result[0] = log(l_sum) + adj_A -adj_B1 + adj_C - adj_sum;
-  result[1] = R0_E;
-  result[2] = R1_E;
-  result[3] = R2_E;
-  result[4] = log_R0_E;
-  result[5] = log_R1_E;
-  result[6] = log_R2_E;
-  result[7] = E_E1;
-  result[8] = E_E2;
-  result[9] = E_E3;
-  result[10] = E_E4;
-  result[11] = v_E;    //change lines between E_E and v_E;
+  result[0] += (log(l_sum) + adj_A -adj_B1 + adj_C - adj_sum) * freq;
+  result[1] += R0_E * freq ;
+  result[2] += R1_E * freq;
+  result[3] += R2_E * freq;
+  result[4] += log_R0_E * freq;
+  result[5] += log_R1_E * freq;
+  result[6] += log_R2_E * freq;
+  result[7] += E_E1 * freq;
+  result[8] += E_E2 * freq;
+  result[9] += E_E3 * freq;
+  result[10] += E_E4 * freq;
+  result[11] += v_E * freq;    //change lines between E_E and v_E;
+}
+// [[Rcpp::export]]
+void dBvZINB_Expt_vec(int *xvec, int *yvec, int *freq, int *n, double *a0, double *a1, double *a2,
+                  double *b1, double *b2, double *p1, double *p2, double *p3, double *p4,
+                  NumericVector *result) {
+  int sumFreq = 0;
+  // initialize result
+  for (int i = 0; i < n; i++) {
+    result[i] = 0.0;
+    sumFreq += freq[i];
+  }
+  
+  for (int i = 0; i < n; i++) {
+    // add expectations with weights (freq)
+    dBvZINB_Expt(x + i, y + i, freq + i, a0, a1, a2,
+                 b1, b2, p1, p2, p3, p4,
+                 result);
+  }
+  
+  for (int i = 0; i < n; i++) {
+    result[i] = 0.0;
+  }
+  
+  // initialize result
+  for (int i = 0; i < n; i++) {
+    result[i] /= sumFreq;
+  }
 }
