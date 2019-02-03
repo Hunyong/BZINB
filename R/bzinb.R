@@ -95,9 +95,9 @@ ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol=1e-8, maxiter=200, 
   xy.reduced$freq <- as.numeric(as.character(xy.reduced$freq))
   n <- sum(xy.reduced$freq)
   n.reduced <- length(xy.reduced$freq)
-  XMAX <- max(xy.reduced$x)
-  YMAX <- max(xy.reduced$y)
-  
+  # XMAX <- max(xy.reduced$x)
+  # YMAX <- max(xy.reduced$y)
+  # XYMAX(XMAX, YMAX)
   
   if (max(xvec)==0 & max(yvec)==0) {return(c(rep(1e-10,5),1,0,0,0, 0, 1, 0, if (SE) {rep(NA, 10)}))} # 9 params, lik, iter, pureCor, and 10 SE's
   #print(xy.reduced)
@@ -172,9 +172,8 @@ ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol=1e-8, maxiter=200, 
     pureCor.old <- pureCor
     # updating
 # cat(449)
-    
-    expt <- do.call(dBvZINB5.Expt.vec, c(list(xy.reduced$x, xy.reduced$y, xy.reduced$freq, n.reduced), as.list(param)))
-    
+   
+    expt <- do.call(dBvZINB5.Expt.vec, c(list(xy.reduced$x, xy.reduced$y, xy.reduced$freq, n.reduced), as.list(param))) #list(XMAX, YMAX)
 tmp.expt <<- expt
 # cat(453)
 # cat("sum(expt): ", expt, "\n")

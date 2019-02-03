@@ -8,10 +8,7 @@
 using namespace std;
 using namespace Rcpp;
 
-long double R0_mat[1001][1001],R1_mat[1001][1001],R2_mat[1001][1001],log_R0_mat[1001][1001],log_R1_mat[1001][1001],log_R2_mat[1001][1001],log_R0_mat2[1001],log_R0_mat3[1001];
-long double l_A_mat[1001][1001],l2_A_mat[1001],l3_A_mat[1001],log_R1_mat2[1001],log_R2_mat2[1001],log_R1_mat3[1001],log_R2_mat3[1001];
-long double l_C_mat[1001][1001];
-long double l_AC_mat[1001][1001];
+
 long double l1(int x, int y, double a0, double a1, double a2, int k, int m, double adjj = 0)
 {
   return(exp(lgamma(a1 + k)- lgamma(k+1)- lgamma(a1) + lgamma(x + y + a0 -m -k) - lgamma(x -k +1) - lgamma(a0 + y - m)
@@ -90,8 +87,15 @@ void dBvZINB_Expt(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
   long double l2_B = (y!=0?0.0:(exp(- (x + a0 + a1) * log(1.0 + b1) + x * log(b1) + adj_B1) * p2));
   long double l3_B = (x!=0?0.0:(exp(- (y + a0 + a2) * log(1.0 + b2) + y * log(b2) + adj_B1) * p3));
   long double l4_B = ((x+y!=0)?0.0:( p4 * exp(adj_B1)));
-
+  
   long double sum_A = 0,sum_AC = 0,sum_A_mat = 0,sum_C_mat = 0;
+  
+  long double R0_mat[x+1][y+1],R1_mat[x+1][y+1],R2_mat[x+1][y+1],log_R0_mat[x+1][y+1],log_R1_mat[x+1][y+1],log_R2_mat[x+1][y+1],log_R0_mat2[x+1],log_R0_mat3[y+1];
+  long double l_A_mat[x+1][y+1],l2_A_mat[x+1],l3_A_mat[y+1],log_R1_mat2[x+1],log_R2_mat2[x+1],log_R1_mat3[y+1],log_R2_mat3[y+1];
+  long double l_C_mat[x+1][y+1];
+  long double l_AC_mat[x+1][y+1];
+  
+  
   for(int i = 0;i <= x;i++)
   {
     for(int j = 0;j <= y;j++)
@@ -279,15 +283,15 @@ void dBvZINB_Expt(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
 
   // cout  << "log_R1_E : " <<  log_R1_E << endl;
   log_R1_E = log_R1_E * 1.0 / l_sum;
-  // cout << ", l3_A_mat[0]: " << l3_A_mat[0]  << ", log(R1_E3_B): " << log(R1_E3_B) << endl;
-  // cout << ", log_R1_mat3[0]: " <<  log_R1_mat3[0] << ", l3_B: " << l3_B << endl;
-  // cout << ", digamma(a1): " << boost::math::digamma(a1)  << ", log(b1): " <<  log(b1) << ", exp(adj_sum): " <<  exp(adj_sum) << ", l4_B: " <<  l4_B << endl;
-  // cout << ", (digamma(a1) + log(b1)): " << boost::math::digamma(a1)  + log(b1) << endl;
-  // cout << ", (digamma(a1) + log(b1))*l4_B: " << (boost::math::digamma(a1)  + log(b1)) * l4_B << endl;
-  // cout << "l.sum: " <<l_sum << endl;
+// cout << ", l3_A_mat[0]: " << l3_A_mat[0]  << ", log(R1_E3_B): " << log(R1_E3_B) << endl;
+// cout << ", log_R1_mat3[0]: " <<  log_R1_mat3[0] << ", l3_B: " << l3_B << endl;
+// cout << ", digamma(a1): " << boost::math::digamma(a1)  << ", log(b1): " <<  log(b1) << ", exp(adj_sum): " <<  exp(adj_sum) << ", l4_B: " <<  l4_B << endl;
+// cout << ", (digamma(a1) + log(b1)): " << boost::math::digamma(a1)  + log(b1) << endl;
+// cout << ", (digamma(a1) + log(b1))*l4_B: " << (boost::math::digamma(a1)  + log(b1)) * l4_B << endl;
+// cout << "l.sum: " <<l_sum << endl;
   log_R2_E = log_R2_E + (boost::math::digamma(a2) + log(b1)) * exp(adj_sum) * l4_B;
   log_R2_E = log_R2_E * 1.0 / l_sum;
-  //cout << sum_AC << l1_B << sum_A << l1_B << l2_B << l3_B << l4_B << adj_C << adj_sum << endl;
+// cout << sum_AC << l1_B << sum_A << l1_B << l2_B << l3_B << l4_B << adj_C << adj_sum << endl;
   double E_E1 = sum_AC * exp(adj_sum) * l1_B;
   double E_E2 = sum_A * l2_B *exp(-adj_C + adj_sum);
   double E_E3 = sum_A * l3_B *exp(-adj_C + adj_sum);
@@ -323,13 +327,18 @@ void dBvZINB_Expt(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
   result[9] += E_E3 * freq;
   result[10] += E_E4 * freq;
   result[11] += v_E * freq;    //change lines between E_E and v_E;
+  //cout << "result" << result << endl;
 }
 // [[Rcpp::export]]
 void dBvZINB_Expt_vec(const IntegerVector &xvec, const IntegerVector &yvec, const IntegerVector &freq, 
                       int &n, double &a0, double &a1, double &a2,
                       double &b1, double &b2, double &p1, double &p2, double &p3, double &p4,
                       NumericVector &result) {
+                      //const int &XMAX, const int &YMAX) {
   int sumFreq = 0, x, y, f;
+  // const int XMAX = 1001;
+  // const int YMAX = 1001;
+  
   // initialize result
   for (int i = 0; i < 12; i++) {
     result[i] = 0.0;
@@ -343,8 +352,7 @@ void dBvZINB_Expt_vec(const IntegerVector &xvec, const IntegerVector &yvec, cons
     
     // add expectations with weights (freq)
     dBvZINB_Expt(x, y, f, a0, a1, a2,
-                 b1, b2, p1, p2, p3, p4,
-                 result);
+                 b1, b2, p1, p2, p3, p4, result);
   }
   
   // from sum to mean
