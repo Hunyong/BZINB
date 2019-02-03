@@ -75,9 +75,10 @@ long double log_R2_E3(int m, double a2)
   return(boost::math::digamma(m + a2));
 }
 
-void dBvZINB_Expt(int& x, int& y, int& freq, double& a0, double& a1, double& a2,
-                  double& b1, double& b2, double& p1, double& p2, double& p3, double& p4,
-                  NumericVector& result)
+// [[Rcpp::export]]
+void dBvZINB_Expt(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
+                  double &b1, double &b2, double &p1, double &p2, double &p3, double &p4,
+                  NumericVector &result)
 {
   double t1 = (float)(b1 + b2 + 1) /(b1 + 1);
   double t2 = (float)(b1 + b2 + 1) /(b2 + 1);
@@ -324,29 +325,30 @@ void dBvZINB_Expt(int& x, int& y, int& freq, double& a0, double& a1, double& a2,
   result[11] += v_E * freq;    //change lines between E_E and v_E;
 }
 // [[Rcpp::export]]
-void dBvZINB_Expt_vec(int *xvec, int *yvec, int *freq, int *n, double *a0, double *a1, double *a2,
-                  double *b1, double *b2, double *p1, double *p2, double *p3, double *p4,
-                  NumericVector *result) {
-  int sumFreq = 0;
+void dBvZINB_Expt_vec(const IntegerVector &xvec, const IntegerVector &yvec, const IntegerVector &freq, 
+                      int &n, double &a0, double &a1, double &a2,
+                      double &b1, double &b2, double &p1, double &p2, double &p3, double &p4,
+                      NumericVector &result) {
+  int sumFreq = 0, x, y, f;
   // initialize result
-  for (int i = 0; i < n; i++) {
+  for (int i = 0; i < 12; i++) {
     result[i] = 0.0;
-    sumFreq += freq[i];
   }
   
   for (int i = 0; i < n; i++) {
+    x = xvec[i]; 
+    y = yvec[i];
+    f = freq[i];
+    sumFreq += freq[i];
+    
     // add expectations with weights (freq)
-    dBvZINB_Expt(x + i, y + i, freq + i, a0, a1, a2,
+    dBvZINB_Expt(x, y, f, a0, a1, a2,
                  b1, b2, p1, p2, p3, p4,
                  result);
   }
   
-  for (int i = 0; i < n; i++) {
-    result[i] = 0.0;
-  }
-  
-  // initialize result
-  for (int i = 0; i < n; i++) {
+  // from sum to mean
+  for (int i = 0; i < 12; i++) {
     result[i] /= sumFreq;
   }
 }

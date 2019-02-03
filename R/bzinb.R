@@ -49,13 +49,28 @@ if (FALSE) {
 
 #' @useDynLib bzinb
 #' @export
-dBvZINB5.Expt.vec <- function(xvec, yvec, freq, n = sum(freq), a0, a1, a2, b1, b2, p1, p2, p3, p4) {
+dBvZINB5.Expt.vec <- function(xvec, yvec, freq, n = length(freq), a0, a1, a2, b1, b2, p1, p2, p3, p4) {
   result <- rep(0, 12)
   dBvZINB_Expt_vec(xvec, yvec, freq, n, a0, a1, a2, b1, b2, p1, p2, p3, p4, result)
   names(result) <- c("logdensity", paste0("R", 0:2, ".E"), paste0("log.R", 0:2, ".E"), paste0("E",1:4,".E"), "v.E")
   result
 }
 
+# step-by-step Expt calculation for information matrix
+dBvZINB5.Expt.se <- function(x, y, a0, a1, a2, b1, b2, p1, p2, p3, p4) {
+  result <- rep(0, 12)
+  dBvZINB_Expt(x, y, freq = 1, a0, a1, a2, b1, b2, p1, p2, p3, p4, result)
+  names(result) <- c("logdensity", paste0("R", 0:2, ".E"), paste0("log.R", 0:2, ".E"), paste0("E",1:4,".E"), "v.E")
+  result
+}
+dBvZINB5.Expt.se.mat <- Vectorize(dBvZINB5.Expt.se)
+
+dBvZINB5.Expt.mat <- function(xvec, yvec, freq, n = sum(freq), a0, a1, a2, b1, b2, p1, p2, p3, p4) {
+  result <- rep(0, 12)
+  dBvZINB_Expt_vec(xvec, yvec, freq, n, a0, a1, a2, b1, b2, p1, p2, p3, p4, result)
+  names(result) <- c("logdensity", paste0("R", 0:2, ".E"), paste0("log.R", 0:2, ".E"), paste0("E",1:4,".E"), "v.E")
+  result
+}
 
 if (FALSE) {
   tmp <- dBvZINB5.Expt.vec(c(1,1,1),c(0,1,2),1,1,1,1,2,.25,.25,.25,.25)
@@ -79,11 +94,16 @@ ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol=1e-8, maxiter=200, 
   xy.reduced$y <- as.numeric(as.character(xy.reduced$y))
   xy.reduced$freq <- as.numeric(as.character(xy.reduced$freq))
   n <- sum(xy.reduced$freq)
+  n.reduced <- length(xy.reduced$freq)
+  XMAX <- max(xy.reduced$x)
+  YMAX <- max(xy.reduced$y)
+  
+  
   if (max(xvec)==0 & max(yvec)==0) {return(c(rep(1e-10,5),1,0,0,0, 0, 1, 0, if (SE) {rep(NA, 10)}))} # 9 params, lik, iter, pureCor, and 10 SE's
   #print(xy.reduced)
   if (SE) { #internal SE function (only use after param is obtained.)
     .se <- function(param) {
-      se <- do.call(BZINB5.se, c(list(xvec, yvec), as.list(param)))
+      se <- do.call(BZINB5.se, c(list(xy.reduced$x, xy.reduced$y, xy.reduced$freq), as.list(param)))
       names(se) <- paste0("se.", c("a0", "a1", "a2", "b1", "b2", "p1", "p2", "p3", "p4", "rho", "logit.rho"))
       se
     }
@@ -153,7 +173,7 @@ ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol=1e-8, maxiter=200, 
     # updating
 # cat(449)
     
-    expt <- do.call(dBvZINB5.Expt.vec, c(list(xy.reduced$x, xy.reduced$y, xy.reduced$freq), as.list(param)))
+    expt <- do.call(dBvZINB5.Expt.vec, c(list(xy.reduced$x, xy.reduced$y, xy.reduced$freq, n.reduced), as.list(param)))
     
 tmp.expt <<- expt
 # cat(453)

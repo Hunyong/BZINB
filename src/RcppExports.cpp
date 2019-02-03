@@ -5,31 +5,54 @@
 
 using namespace Rcpp;
 
-// dBvZINB_Expt_vec
-void dBvZINB_Expt_vec(int *xvec, int *yvec, int *freq, int *n, double *a0, double *a1, double *a2, double *b1, double *b2, double *p1, double *p2, double *p3, double *p4, NumericVector *result);
-RcppExport SEXP _bzinb_dBvZINB_Expt_vec(SEXP *xvecSEXP, SEXP *yvecSEXP, SEXP *freqSEXP, SEXP *nSEXP, SEXP *a0SEXP, SEXP *a1SEXP, SEXP *a2SEXP, SEXP *b1SEXP, SEXP *b2SEXP, SEXP *p1SEXP, SEXP *p2SEXP, SEXP *p3SEXP, SEXP *p4SEXP, SEXP *resultSEXP) {
+// dBvZINB_Expt
+void dBvZINB_Expt(int& x, int& y, int& freq, double& a0, double& a1, double& a2, double& b1, double& b2, double& p1, double& p2, double& p3, double& p4, NumericVector& result);
+RcppExport SEXP _bzinb_dBvZINB_Expt(SEXP xSEXP, SEXP ySEXP, SEXP freqSEXP, SEXP a0SEXP, SEXP a1SEXP, SEXP a2SEXP, SEXP b1SEXP, SEXP b2SEXP, SEXP p1SEXP, SEXP p2SEXP, SEXP p3SEXP, SEXP p4SEXP, SEXP resultSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type *xvec(*xvecSEXP);
-    Rcpp::traits::input_parameter< int >::type *yvec(*yvecSEXP);
-    Rcpp::traits::input_parameter< int >::type *freq(*freqSEXP);
-    Rcpp::traits::input_parameter< int >::type *n(*nSEXP);
-    Rcpp::traits::input_parameter< double >::type *a0(*a0SEXP);
-    Rcpp::traits::input_parameter< double >::type *a1(*a1SEXP);
-    Rcpp::traits::input_parameter< double >::type *a2(*a2SEXP);
-    Rcpp::traits::input_parameter< double >::type *b1(*b1SEXP);
-    Rcpp::traits::input_parameter< double >::type *b2(*b2SEXP);
-    Rcpp::traits::input_parameter< double >::type *p1(*p1SEXP);
-    Rcpp::traits::input_parameter< double >::type *p2(*p2SEXP);
-    Rcpp::traits::input_parameter< double >::type *p3(*p3SEXP);
-    Rcpp::traits::input_parameter< double >::type *p4(*p4SEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type *result(*resultSEXP);
-    dBvZINB_Expt_vec(*xvec, *yvec, *freq, *n, *a0, *a1, *a2, *b1, *b2, *p1, *p2, *p3, *p4, *result);
+    Rcpp::traits::input_parameter< int& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< int& >::type freq(freqSEXP);
+    Rcpp::traits::input_parameter< double& >::type a0(a0SEXP);
+    Rcpp::traits::input_parameter< double& >::type a1(a1SEXP);
+    Rcpp::traits::input_parameter< double& >::type a2(a2SEXP);
+    Rcpp::traits::input_parameter< double& >::type b1(b1SEXP);
+    Rcpp::traits::input_parameter< double& >::type b2(b2SEXP);
+    Rcpp::traits::input_parameter< double& >::type p1(p1SEXP);
+    Rcpp::traits::input_parameter< double& >::type p2(p2SEXP);
+    Rcpp::traits::input_parameter< double& >::type p3(p3SEXP);
+    Rcpp::traits::input_parameter< double& >::type p4(p4SEXP);
+    Rcpp::traits::input_parameter< NumericVector& >::type result(resultSEXP);
+    dBvZINB_Expt(x, y, freq, a0, a1, a2, b1, b2, p1, p2, p3, p4, result);
+    return R_NilValue;
+END_RCPP
+}
+// dBvZINB_Expt_vec
+void dBvZINB_Expt_vec(const IntegerVector& xvec, const IntegerVector& yvec, const IntegerVector& freq, int& n, double& a0, double& a1, double& a2, double& b1, double& b2, double& p1, double& p2, double& p3, double& p4, NumericVector& result);
+RcppExport SEXP _bzinb_dBvZINB_Expt_vec(SEXP xvecSEXP, SEXP yvecSEXP, SEXP freqSEXP, SEXP nSEXP, SEXP a0SEXP, SEXP a1SEXP, SEXP a2SEXP, SEXP b1SEXP, SEXP b2SEXP, SEXP p1SEXP, SEXP p2SEXP, SEXP p3SEXP, SEXP p4SEXP, SEXP resultSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const IntegerVector& >::type xvec(xvecSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type yvec(yvecSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type freq(freqSEXP);
+    Rcpp::traits::input_parameter< int& >::type n(nSEXP);
+    Rcpp::traits::input_parameter< double& >::type a0(a0SEXP);
+    Rcpp::traits::input_parameter< double& >::type a1(a1SEXP);
+    Rcpp::traits::input_parameter< double& >::type a2(a2SEXP);
+    Rcpp::traits::input_parameter< double& >::type b1(b1SEXP);
+    Rcpp::traits::input_parameter< double& >::type b2(b2SEXP);
+    Rcpp::traits::input_parameter< double& >::type p1(p1SEXP);
+    Rcpp::traits::input_parameter< double& >::type p2(p2SEXP);
+    Rcpp::traits::input_parameter< double& >::type p3(p3SEXP);
+    Rcpp::traits::input_parameter< double& >::type p4(p4SEXP);
+    Rcpp::traits::input_parameter< NumericVector& >::type result(resultSEXP);
+    dBvZINB_Expt_vec(xvec, yvec, freq, n, a0, a1, a2, b1, b2, p1, p2, p3, p4, result);
     return R_NilValue;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_bzinb_dBvZINB_Expt", (DL_FUNC) &_bzinb_dBvZINB_Expt, 13},
     {"_bzinb_dBvZINB_Expt_vec", (DL_FUNC) &_bzinb_dBvZINB_Expt_vec, 14},
     {NULL, NULL, 0}
 };
