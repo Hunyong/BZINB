@@ -1,3 +1,4 @@
+// [[Rcpp::depends(BH)]]
 #include <Rcpp.h>
 #include <iostream>
 #include <math.h>

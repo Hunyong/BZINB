@@ -22,12 +22,10 @@ score <- Vectorize(score.i, vectorize.args = c("x", "y"))
 info <- function(xvec, yvec, freq = rep(1, length(xvec)), a0, a1, a2, b1, b2, p1, p2, p3, p4, exact = FALSE, ...) {
   
   s <- score(xvec, yvec, a0, a1, a2, b1, b2, p1, p2, p3, p4, ...)
-print(class(s))
-head(s)
   result <- s %*% (t(s) * freq)
   
   if (exact) {
-    n <- sum(xy.reduced$freq)
+    n <- sum(freq)
     s.sum <- s %*% freq
     result <- result - s.sum %*% t(s.sum)/n
   }
@@ -47,16 +45,12 @@ BZINB5.se <- function(xvec, yvec, freq = rep(1, length(xvec)), a0, a1, a2, b1, b
   info.mat <- info(xvec, yvec, freq, a0, a1, a2, b1, b2, p1, p2, p3, p4, ...)
   
   # singular matrix
-  if (qr(info.mat)$rank < 8) {
-    warnings("The information matrix is not full rank, and thus is not invertible.")
-    se <- rep(NA, 11)
-    names(se) <- c("a0", "a1", "a2", "b1", "b2", "p1", "p2", "p3", "p4", "rho", "logit.rho")
-    return(se)
-  } 
+  if (qr(info.mat)$rank < 8)
+    warning ("The information matrix is (essentially) not full rank, and thus the standard error is not reliable.")
   
   cov.mat <- try(solve(info.mat))
   if (class(cov.mat) == "try-error") {
-    se <- rep(NA, 10)
+    se <- rep(NA, 11)
     names(se) <- c("a0", "a1", "a2", "b1", "b2", "p1", "p2", "p3", "p4", "rho", "logit.rho")
     return(se)
   }
@@ -108,10 +102,10 @@ if (FALSE) {
 #'
 #' @useDynLib bzinb
 #' @export
-ci.rho <- function(xvec, yvec, a0, a1, a2, b1, b2, p1, p2, p3, p4, logit = TRUE, alpha = 0.05, ...) {
+ci.rho <- function(xvec, yvec, freq = rep(1, length(xvec)), a0, a1, a2, b1, b2, p1, p2, p3, p4, logit = TRUE, alpha = 0.05, ...) {
   if (alpha > 0.5) {stop("alpha is too large (> 0.5).")}
   rho <- a0/sqrt((a0 + a1) * (a0 + a2)) *sqrt(b1 *b2 /(b1 + 1) /(b2 + 1))
-  se <- BZINB5.se(xvec, yvec, a0, a1, a2, b1, b2, p1, p2, p3, p4, ...)
+  se <- BZINB5.se(xvec, yvec, freq = freq, a0, a1, a2, b1, b2, p1, p2, p3, p4, ...)
 
   # logit or not
   if (logit) {

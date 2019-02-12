@@ -99,11 +99,18 @@ ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol=1e-8, maxiter=200, 
   # YMAX <- max(xy.reduced$y)
   # XYMAX(XMAX, YMAX)
   
-  if (max(xvec)==0 & max(yvec)==0) {return(c(rep(1e-10,5),1,0,0,0, 0, 1, 0, if (SE) {rep(NA, 10)}))} # 9 params, lik, iter, pureCor, and 10 SE's
+  if (max(xvec)==0 & max(yvec)==0) {return(c(rep(1e-10,5),1,0,0,0, 0, 1, 0, if (SE) {rep(NA, 11)}))} # 9 params, lik, iter, pureCor, and 11 SE's
   #print(xy.reduced)
   if (SE) { #internal SE function (only use after param is obtained.)
     .se <- function(param) {
-      se <- do.call(BZINB5.se, c(list(xy.reduced$x, xy.reduced$y, xy.reduced$freq), as.list(param)))
+# print(names(c(list(xy.reduced$x, xy.reduced$y, xy.reduced$freq), as.list(param))))
+# print(c("freq", xy.reduced$freq))
+# print(c("param", param))
+# print(as.list(param))
+      # se <- BZINB5.se(xvec = xy.reduced$x, yvec = xy.reduced$y, freq = xy.reduced$freq, 
+      #                 a0 = param[1], a1 = param[2], a2 = param[3], b1 = param[4],  b2 = param[5], 
+      #                 p1 = param[6], p2 = param[7], p3 = param[8], p4 = param[9])
+      se <- do.call(BZINB5.se, c(list(xy.reduced$x, xy.reduced$y, freq = xy.reduced$freq), as.list(param)))
       names(se) <- paste0("se.", c("a0", "a1", "a2", "b1", "b2", "p1", "p2", "p3", "p4", "rho", "logit.rho"))
       se
     }
@@ -117,6 +124,7 @@ ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol=1e-8, maxiter=200, 
     zero <- sum(xvec == 0 & yvec == 0) / n
 
     initial <- rep(NA,9)
+    names(initial) <- c("a0", "a1", "a2", "b1", "b2", "p1", "p2", "p3", "p4")
     initial[4] <- s2.x /ifelse(xbar==0,1e-4, xbar) #%>% print
     initial[5] <- s2.y /ifelse(ybar==0,1e-4, ybar) #%>% print
     initial[2:3] <- c(xbar,ybar)/pmax(initial[4:5], c(0.1,0.1)) #%>% print
@@ -128,6 +136,8 @@ ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol=1e-8, maxiter=200, 
     initial <- pmax(initial, 1e-5)
     if(is.na(sum(initial))) { initial[is.na(initial)] <- 1}
   # print(initial) ###
+  } else {
+    names(initial) <- c("a0", "a1", "a2", "b1", "b2", "p1", "p2", "p3", "p4")
   }
 # print(initial)
   booster <- function (param.matrix, xvec, yvec, n.cand = 10) {
@@ -248,6 +258,11 @@ tmp.expt <<- expt
       lik <- lik.BvZINB5(xvec, yvec, param = param)
       result <- c(param, lik, iter, pureCor)
       names(result) <- c("a0", "a1", "a2", "b1", "b2", paste0("p",1:4), "lik","iter", "rho")
+    # print(c("line 258"))
+    # print(c("iter = ", iter))
+    # print(c("param = ", param))
+    # print(.se)
+    # print(BZINB5.se)
       if (SE) result <- c(result, .se(param))
       return(result)
       }
@@ -272,7 +287,7 @@ tmp.expt <<- expt
 #' @useDynLib bzinb
 #' @export
 ML.BvZINB5 <- function(xvec, yvec, ...) {
-  if (!is.integer(xvec) | !is.integer(yvec)) stop("xvec and yvec should be integers.")
+  # if (!is.integer(xvec) | !is.integer(yvec)) stop("xvec and yvec should be integers.")
   # nonnegative
   # len(xvec) == len(yvec)
   # any(is.na(xvec))
@@ -291,5 +306,6 @@ if (FALSE) {
   tmp <- rBvZINB5 (800, param=param)
   table(tmp[,1], tmp[,2])
 
-  ML.BvZINB5(tmp[,1], tmp[,2], maxiter=20, showFlag=TRUE, SE = TRUE)
+  ML.BvZINB5(tmp[,1], tmp[,2], maxiter=20000, showFlag=F, SE = TRUE)
+  ML.BvZINB5(tmp[,1], tmp[,2], maxiter=20000, showFlag=F, SE = TRUE, initial = initialize(tmp[,1], tmp[,2]))
 }
