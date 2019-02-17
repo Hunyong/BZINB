@@ -94,7 +94,7 @@ ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol=1e-8, maxiter=200, 
   xy.reduced$y <- as.numeric(as.character(xy.reduced$y))
   xy.reduced$freq <- as.numeric(as.character(xy.reduced$freq))
   n <- sum(xy.reduced$freq)
-  n.reduced <- length(xy.reduced$freq)
+  n.reduced <- as.integer(length(xy.reduced$freq))
   # XMAX <- max(xy.reduced$x)
   # YMAX <- max(xy.reduced$y)
   # XYMAX(XMAX, YMAX)
@@ -141,19 +141,21 @@ ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol=1e-8, maxiter=200, 
   }
   
   iter = 0L
-maxiter = maxiter
-tol = tol
-showFlag= showFlag
+# maxiter = maxiter
+# tol = tol
+# showFlag= showFlag
   param = initial
   lik = Inf
   expt = as.double(rep(0, 12))
-print(c(param, showFlag, iter))
+  # print(c(param, showFlag, iter))
   em(param = param, xvec = xy.reduced$x, yvec = xy.reduced$y, 
      freq = xy.reduced$freq, n = n.reduced, expt = expt, 
-     iter = iter, maxiter = maxiter, tol = tol, showFlag = as.integer(showFlag))
-print(c(param, showFlag, iter))  
+     iter = as.integer(iter), maxiter = maxiter, tol = tol, 
+     showFlag = as.integer(showFlag))
+tmp.expt <<- expt
+  # print(c(param, showFlag, iter))  
   result <- c(a0 = param[1], a1 = param[2], a2 = param[3], b1 = param[4], b2 = param[5], 
-              p1 = param[6], p2 = param[7], p3 = param[8], p4 = param[9], lik = expt[1], iter = iter)
+              p1 = param[6], p2 = param[7], p3 = param[8], p4 = param[9], lik = expt[1]*n, iter = iter)
   return(result)
 }
 #' @useDynLib bzinb
@@ -178,7 +180,12 @@ if (FALSE) {
   tmp <- rBvZINB5 (800, param=param)
   table(tmp[,1], tmp[,2])
 
+  microbenchmark::microbenchmark(
+    ML.BvZINB5(tmp[,1], tmp[,2], maxiter=1000, SE = FALSE), 
+    ML.BvZINB5.old(tmp[,1], tmp[,2], maxiter=1000, SE = FALSE),
+    time = 5)
   ML.BvZINB5(tmp[,1], tmp[,2], maxiter=100)
+  
   ML.BvZINB5(tmp[,1], tmp[,2], maxiter=20000, showFlag=F, SE = TRUE, initial = initialize(tmp[,1], tmp[,2]))
 }
 

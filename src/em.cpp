@@ -11,8 +11,8 @@
 
 using namespace std;
 using namespace Rcpp;
-#define EPSILON 1e-6
-#define EPSILON2 1e-6
+#define EPSILON 1e-5
+#define EPSILON2 1e-5
 
 // 1. Expt
 
@@ -339,7 +339,7 @@ void dBvZINB_Expt(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
 }
 // [[Rcpp::export]]
 void dBvZINB_Expt_vec(const IntegerVector &xvec, const IntegerVector &yvec, const IntegerVector &freq, 
-                      int &n, double &a0, double &a1, double &a2,
+                      const int &n, double &a0, double &a1, double &a2,
                       double &b1, double &b2, double &p1, double &p2, double &p3, double &p4,
                       NumericVector &result) {
   //const int &XMAX, const int &YMAX) {
@@ -379,7 +379,7 @@ double func(double x, double y)
 double inv_digamma(double x, double y) 
 { 
   double h = func(x, y) / boost::math::trigamma(x);
-  while (abs(h) >= EPSILON2)
+  while (fabs(h) >= EPSILON2)
   {
     h = func(x, y) / boost::math::trigamma(x);
     while (h > x) {
@@ -397,13 +397,13 @@ double inv_digamma(double x, double y)
 // optimization
 
 
-void inv_digamma_vec(double lb, NumericVector &expt, NumericVector &a, NumericVector &idgam) 
+void inv_digamma_vec(NumericVector& lb, NumericVector &expt, NumericVector &a, NumericVector &idgam) 
 { 
   //double idgam[3];
   //double *idgam = new double[3];
-  idgam[0] = inv_digamma(a[0], expt[4] + lb);
-  idgam[1] = inv_digamma(a[1], expt[5] + lb);
-  idgam[2] = inv_digamma(a[2], expt[6] + lb);
+  idgam[0] = inv_digamma(a[0], expt[4] - lb[0]);
+  idgam[1] = inv_digamma(a[1], expt[5] - lb[0]);
+  idgam[2] = inv_digamma(a[2], expt[6] - lb[0]);
   //return(idgam);
 }
 
@@ -428,7 +428,7 @@ void inv_digamma_vec(double lb, NumericVector &expt, NumericVector &a, NumericVe
 // }
 
 // Derivative
-double hfunc(double lb, NumericVector &expt, NumericVector &a, NumericVector &idgam)
+double hfunc(NumericVector& lb, NumericVector &expt, NumericVector &a, NumericVector &idgam)
 {
   inv_digamma_vec(lb, expt, a, idgam);
   double result = 0.0;
@@ -436,19 +436,19 @@ double hfunc(double lb, NumericVector &expt, NumericVector &a, NumericVector &id
     // cout << "idgam[0:2]" << idgam[0] << " " << idgam[1] << " " << idgam[2] << endl;
     result += (1/ boost::math::trigamma(idgam[i]));
   }
-  result = result / (idgam[0] + idgam[1] + idgam[2]) + 1.0;
-  result = (log(idgam[0] + idgam[1] + idgam[2]) + lb - log(expt[1] + expt[2] + expt[3])) / result;
+  result = - result / (idgam[0] + idgam[1] + idgam[2]) + 1.0;
+  result = (log(idgam[0] + idgam[1] + idgam[2]) + lb[0] - log(expt[1] + expt[2] + expt[3])) / result;
   return (result);
 }
 
 // [[Rcpp::export]]
-void opt_lb(double& lb, NumericVector &expt, NumericVector &a,  NumericVector &idgam)
+void opt_lb(NumericVector& lb, NumericVector &expt, NumericVector &a,  NumericVector &idgam)
 {
   //double* lb = log(b1);
   // double h =  objective(lb, expt, a, idgam) / derivFunc(lb, expt, a, idgam);
   double h = hfunc(lb, expt, a, idgam);
 // cout << "h = " << h << " ";
-  while (abs(h) >= EPSILON)
+  while (fabs(h) >= EPSILON)
   {
     // h = objective(lb, expt, a, idgam)/derivFunc(lb, expt, a, idgam);
     // while (h > b1) {
@@ -456,11 +456,11 @@ void opt_lb(double& lb, NumericVector &expt, NumericVector &a,  NumericVector &i
     //   h /= 2.0;
     // }
 // cout << "h = " << h << " ";
-    lb -= h;
+    lb[0] -= h;
     h = hfunc(lb, expt, a, idgam);
   }
   //b1 = exp(lb);
-  // cout << endl << "opt_b1 =" << b1 << endl;
+  //cout << "lb =" << lb  << ", b1 = " << exp(lb) << endl;
   // double* idgam = inv_digamma_vec(lb, expt, a);
   a[0] = idgam[0];
   a[1] = idgam[1];
@@ -474,26 +474,27 @@ void opt_lb(double& lb, NumericVector &expt, NumericVector &a,  NumericVector &i
 
 // [[Rcpp::export]]
 void em(NumericVector& param, const IntegerVector &xvec, const IntegerVector &yvec, 
-        const IntegerVector &freq, int &n, NumericVector &expt, 
-        IntegerVector &iter,
-        IntegerVector &maxiter, double &tol, int showFlag)
+        const IntegerVector &freq, const int &n, NumericVector &expt, 
+        IntegerVector &iter, int &maxiter, double &tol, int showFlag)
 {
-  //int iter = 0;
   double param_diff = 1.0;
   NumericVector param_old(9);
   NumericVector idgam(3);
+  NumericVector lb(1);
+  iter[0] = 0;
   
-  // cout << "tol = " << tol << endl;  
-  while(maxiter[0] > iter[0] && param_diff > tol)
+  //cout << "maxiter = " << maxiter << " iter = " << iter[0] << endl;  
+  while(maxiter > iter[0] && param_diff > tol)
   {
     // cout << "param_diff = " << param_diff << " ";
     if (showFlag == 1) {
-      cout << "iter = " << iter[0] << ", a0 = " << param[0] << ", a1 = " << param[1]
+      cout << "iter = " << iter[0]  << ", a0 = " << param[0] << ", a1 = " << param[1]
            << ", a2 = " << param[2] << ", b1 = " << param[3] << ", b2 = " << param[4] 
            << ", p1 = " << param[5] << ", p2 = " << param[6] << ", p3 = " <<  param[7]
-           << ", p4 = " << param[8]  << endl;
+           << ", p4 = " << param[8] << ", likelihood/n = " << expt[0] << endl;
     }
     iter[0] += 1;
+    //cout << "maxiter = " << maxiter << " iter1 = " << iter[0] << endl;  
     for(int i = 0;i < 9;i++)
     {
       param_old[i] = param[i];
@@ -502,28 +503,28 @@ void em(NumericVector& param, const IntegerVector &xvec, const IntegerVector &yv
     dBvZINB_Expt_vec(xvec, yvec, freq, n, param[0], param[1], param[2], param[3], param[4], 
                      param[5], param[6], param[7], param[8], expt);
     double delta = expt[11]*1.0 / (expt[1] + expt[3]);
+
     for(int i = 0;i < 4; i++)
     {
       param[5 + i] = expt[7 + i];
     }
-    double lb = log(param[3]);
+    lb[0] = log(param[3]);
     // Finding optimized a0, a1, a2, b1
     opt_lb(lb, expt, param, idgam);
-    param[3] = exp(lb);
+    param[3] = exp(lb[0]);
     param[4] = param[3] * delta;
     
     param_diff = 0.0;
     for(int i = 0;i < 9;i++)
     {
-      double dif = abs(0.0 + param[i] - param_old[i]);
+      double dif = fabs(0.0 + param[i] - param_old[i]);
       // cout << &param << endl;
-      //double dif = abs(0.0 + param[i] - param_old[i]);
+      //double dif = fabs(0.0 + param[i] - param_old[i]);
       if( dif > param_diff)
       {
         param_diff = dif;
       }
     }
-    //cout << "param_diff = " << param_diff << " ";
   }
 // cout << "a " << param[0] << " " << param[1] << " " << param[2] << " b " << param[3] << " " << param[4] << " pi "
 //      << param[5] << " " << param[6] << " "  << param[7] << " " << param[8] << endl;
