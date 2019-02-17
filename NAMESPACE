@@ -2,8 +2,11 @@
 
 export(BZINB5.se)
 export(ML.BvZINB5)
+export(ML.BvZINB5.old)
 export(ci.rho)
 export(dBvZINB5.Expt.vec)
+export(idgamma)
 export(initialize)
+export(opt)
 export(rBvZINB5)
 useDynLib(bzinb)
