@@ -5,6 +5,25 @@
 
 using namespace Rcpp;
 
+// em
+void em(NumericVector& param, const IntegerVector& xvec, const IntegerVector& yvec, const IntegerVector& freq, const int& n, NumericVector& expt, IntegerVector& iter, int& maxiter, double& tol, int showFlag);
+RcppExport SEXP _bzinb_em(SEXP paramSEXP, SEXP xvecSEXP, SEXP yvecSEXP, SEXP freqSEXP, SEXP nSEXP, SEXP exptSEXP, SEXP iterSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP showFlagSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector& >::type param(paramSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type xvec(xvecSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type yvec(yvecSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type freq(freqSEXP);
+    Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
+    Rcpp::traits::input_parameter< NumericVector& >::type expt(exptSEXP);
+    Rcpp::traits::input_parameter< IntegerVector& >::type iter(iterSEXP);
+    Rcpp::traits::input_parameter< int& >::type maxiter(maxiterSEXP);
+    Rcpp::traits::input_parameter< double& >::type tol(tolSEXP);
+    Rcpp::traits::input_parameter< int >::type showFlag(showFlagSEXP);
+    em(param, xvec, yvec, freq, n, expt, iter, maxiter, tol, showFlag);
+    return R_NilValue;
+END_RCPP
+}
 // dBvZINB_Expt
 void dBvZINB_Expt(int& x, int& y, int& freq, double& a0, double& a1, double& a2, double& b1, double& b2, double& p1, double& p2, double& p3, double& p4, NumericVector& result);
 RcppExport SEXP _bzinb_dBvZINB_Expt(SEXP xSEXP, SEXP ySEXP, SEXP freqSEXP, SEXP a0SEXP, SEXP a1SEXP, SEXP a2SEXP, SEXP b1SEXP, SEXP b2SEXP, SEXP p1SEXP, SEXP p2SEXP, SEXP p3SEXP, SEXP p4SEXP, SEXP resultSEXP) {
@@ -63,31 +82,12 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
-// em
-void em(NumericVector& param, const IntegerVector& xvec, const IntegerVector& yvec, const IntegerVector& freq, const int& n, NumericVector& expt, IntegerVector& iter, int& maxiter, double& tol, int showFlag);
-RcppExport SEXP _bzinb_em(SEXP paramSEXP, SEXP xvecSEXP, SEXP yvecSEXP, SEXP freqSEXP, SEXP nSEXP, SEXP exptSEXP, SEXP iterSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP showFlagSEXP) {
-BEGIN_RCPP
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector& >::type param(paramSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type xvec(xvecSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type yvec(yvecSEXP);
-    Rcpp::traits::input_parameter< const IntegerVector& >::type freq(freqSEXP);
-    Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
-    Rcpp::traits::input_parameter< NumericVector& >::type expt(exptSEXP);
-    Rcpp::traits::input_parameter< IntegerVector& >::type iter(iterSEXP);
-    Rcpp::traits::input_parameter< int& >::type maxiter(maxiterSEXP);
-    Rcpp::traits::input_parameter< double& >::type tol(tolSEXP);
-    Rcpp::traits::input_parameter< int >::type showFlag(showFlagSEXP);
-    em(param, xvec, yvec, freq, n, expt, iter, maxiter, tol, showFlag);
-    return R_NilValue;
-END_RCPP
-}
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_bzinb_em", (DL_FUNC) &_bzinb_em, 10},
     {"_bzinb_dBvZINB_Expt", (DL_FUNC) &_bzinb_dBvZINB_Expt, 13},
     {"_bzinb_dBvZINB_Expt_vec", (DL_FUNC) &_bzinb_dBvZINB_Expt_vec, 14},
     {"_bzinb_opt_lb", (DL_FUNC) &_bzinb_opt_lb, 4},
-    {"_bzinb_em", (DL_FUNC) &_bzinb_em, 10},
     {NULL, NULL, 0}
 };
 

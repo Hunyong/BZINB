@@ -155,11 +155,12 @@ ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol=1e-8, maxiter=200, 
 tmp.expt <<- expt
   # print(c(param, showFlag, iter))  
   result <- c(a0 = param[1], a1 = param[2], a2 = param[3], b1 = param[4], b2 = param[5], 
-              p1 = param[6], p2 = param[7], p3 = param[8], p4 = param[9], lik = expt[1]*n, iter = iter)
+              p1 = param[6], p2 = param[7], p3 = param[8], p4 = param[9], lik = expt[1], iter = iter)
   return(result)
 }
 #' @useDynLib bzinb
 #' @export
+#' @import Rcpp BH
 ML.BvZINB5 <- function(xvec, yvec, ...) {
   # if (!is.integer(xvec) | !is.integer(yvec)) stop("xvec and yvec should be integers.")
   # nonnegative
@@ -187,6 +188,16 @@ if (FALSE) {
   ML.BvZINB5(tmp[,1], tmp[,2], maxiter=100)
   
   ML.BvZINB5(tmp[,1], tmp[,2], maxiter=20000, showFlag=F, SE = TRUE, initial = initialize(tmp[,1], tmp[,2]))
+  
+  library(devtools); load_all()
+  set.seed(11)
+  tmp <- rBvZINB5 (800, param=param)
+  # ML.BvZINB5.old(tmp[,1], tmp[,2], maxiter=10, showFlag=T)
+  # ML.BvZINB5(tmp[,1], tmp[,2], maxiter=10, showFlag=T)
+  # iter = 2059, likelihood = -2987.08
+  ML.BvZINB5(tmp[,1], tmp[,2], maxiter=2, showFlag=F, initial = c(a0 = 0.865977, a1 = 1.00028, a2 = 1.11896, b1 = 1.11955, b2 = 1.01823, p1 = 0.962907, p2 = 0.00529951, p3 = 1.62319e-27, p4 = 0.0317939))
+  
+  maxiter = 500; a1 <- Sys.time();( b1 <- ML.BvZINB5.old(tmp[,1], tmp[,2], maxiter=maxiter, showFlag=F)); a2 <- Sys.time(); cat("New method\n"); (b2 <- ML.BvZINB5(tmp[,1], tmp[,2], maxiter=maxiter, showFlag=F)); a3 <- Sys.time();  a2-a1; a3-a2; cat("diff(lik) ", b2[10] - b1[10], "iters (old, new) ", b2[11], b1[11])
 }
 
 #' @useDynLib bzinb
