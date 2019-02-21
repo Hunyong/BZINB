@@ -6,8 +6,8 @@
 using namespace Rcpp;
 
 // em
-void em(NumericVector& param, const IntegerVector& xvec, const IntegerVector& yvec, const IntegerVector& freq, const int& n, NumericVector& expt, IntegerVector& iter, int& maxiter, double& tol, int showFlag);
-RcppExport SEXP _bzinb_em(SEXP paramSEXP, SEXP xvecSEXP, SEXP yvecSEXP, SEXP freqSEXP, SEXP nSEXP, SEXP exptSEXP, SEXP iterSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP showFlagSEXP) {
+void em(NumericVector& param, const IntegerVector& xvec, const IntegerVector& yvec, const IntegerVector& freq, const int& n, NumericVector& expt, NumericVector& info, const int& se, IntegerVector& iter, int& maxiter, double& tol, int showFlag);
+RcppExport SEXP _bzinb_em(SEXP paramSEXP, SEXP xvecSEXP, SEXP yvecSEXP, SEXP freqSEXP, SEXP nSEXP, SEXP exptSEXP, SEXP infoSEXP, SEXP seSEXP, SEXP iterSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP showFlagSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector& >::type param(paramSEXP);
@@ -16,17 +16,19 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< const IntegerVector& >::type freq(freqSEXP);
     Rcpp::traits::input_parameter< const int& >::type n(nSEXP);
     Rcpp::traits::input_parameter< NumericVector& >::type expt(exptSEXP);
+    Rcpp::traits::input_parameter< NumericVector& >::type info(infoSEXP);
+    Rcpp::traits::input_parameter< const int& >::type se(seSEXP);
     Rcpp::traits::input_parameter< IntegerVector& >::type iter(iterSEXP);
     Rcpp::traits::input_parameter< int& >::type maxiter(maxiterSEXP);
     Rcpp::traits::input_parameter< double& >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< int >::type showFlag(showFlagSEXP);
-    em(param, xvec, yvec, freq, n, expt, iter, maxiter, tol, showFlag);
+    em(param, xvec, yvec, freq, n, expt, info, se, iter, maxiter, tol, showFlag);
     return R_NilValue;
 END_RCPP
 }
 // dBvZINB_Expt
-void dBvZINB_Expt(int& x, int& y, int& freq, double& a0, double& a1, double& a2, double& b1, double& b2, double& p1, double& p2, double& p3, double& p4, NumericVector& result);
-RcppExport SEXP _bzinb_dBvZINB_Expt(SEXP xSEXP, SEXP ySEXP, SEXP freqSEXP, SEXP a0SEXP, SEXP a1SEXP, SEXP a2SEXP, SEXP b1SEXP, SEXP b2SEXP, SEXP p1SEXP, SEXP p2SEXP, SEXP p3SEXP, SEXP p4SEXP, SEXP resultSEXP) {
+void dBvZINB_Expt(int& x, int& y, int& freq, double& a0, double& a1, double& a2, double& b1, double& b2, double& p1, double& p2, double& p3, double& p4, NumericVector& expt, NumericVector& s_i, NumericVector& info, int se);
+RcppExport SEXP _bzinb_dBvZINB_Expt(SEXP xSEXP, SEXP ySEXP, SEXP freqSEXP, SEXP a0SEXP, SEXP a1SEXP, SEXP a2SEXP, SEXP b1SEXP, SEXP b2SEXP, SEXP p1SEXP, SEXP p2SEXP, SEXP p3SEXP, SEXP p4SEXP, SEXP exptSEXP, SEXP s_iSEXP, SEXP infoSEXP, SEXP seSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int& >::type x(xSEXP);
@@ -41,14 +43,17 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double& >::type p2(p2SEXP);
     Rcpp::traits::input_parameter< double& >::type p3(p3SEXP);
     Rcpp::traits::input_parameter< double& >::type p4(p4SEXP);
-    Rcpp::traits::input_parameter< NumericVector& >::type result(resultSEXP);
-    dBvZINB_Expt(x, y, freq, a0, a1, a2, b1, b2, p1, p2, p3, p4, result);
+    Rcpp::traits::input_parameter< NumericVector& >::type expt(exptSEXP);
+    Rcpp::traits::input_parameter< NumericVector& >::type s_i(s_iSEXP);
+    Rcpp::traits::input_parameter< NumericVector& >::type info(infoSEXP);
+    Rcpp::traits::input_parameter< int >::type se(seSEXP);
+    dBvZINB_Expt(x, y, freq, a0, a1, a2, b1, b2, p1, p2, p3, p4, expt, s_i, info, se);
     return R_NilValue;
 END_RCPP
 }
 // dBvZINB_Expt_vec
-void dBvZINB_Expt_vec(const IntegerVector& xvec, const IntegerVector& yvec, const IntegerVector& freq, const int& n, double& a0, double& a1, double& a2, double& b1, double& b2, double& p1, double& p2, double& p3, double& p4, NumericVector& result);
-RcppExport SEXP _bzinb_dBvZINB_Expt_vec(SEXP xvecSEXP, SEXP yvecSEXP, SEXP freqSEXP, SEXP nSEXP, SEXP a0SEXP, SEXP a1SEXP, SEXP a2SEXP, SEXP b1SEXP, SEXP b2SEXP, SEXP p1SEXP, SEXP p2SEXP, SEXP p3SEXP, SEXP p4SEXP, SEXP resultSEXP) {
+void dBvZINB_Expt_vec(const IntegerVector& xvec, const IntegerVector& yvec, const IntegerVector& freq, const int& n, double& a0, double& a1, double& a2, double& b1, double& b2, double& p1, double& p2, double& p3, double& p4, NumericVector& expt, NumericVector& s_i, NumericVector& info, int se);
+RcppExport SEXP _bzinb_dBvZINB_Expt_vec(SEXP xvecSEXP, SEXP yvecSEXP, SEXP freqSEXP, SEXP nSEXP, SEXP a0SEXP, SEXP a1SEXP, SEXP a2SEXP, SEXP b1SEXP, SEXP b2SEXP, SEXP p1SEXP, SEXP p2SEXP, SEXP p3SEXP, SEXP p4SEXP, SEXP exptSEXP, SEXP s_iSEXP, SEXP infoSEXP, SEXP seSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< const IntegerVector& >::type xvec(xvecSEXP);
@@ -64,8 +69,11 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double& >::type p2(p2SEXP);
     Rcpp::traits::input_parameter< double& >::type p3(p3SEXP);
     Rcpp::traits::input_parameter< double& >::type p4(p4SEXP);
-    Rcpp::traits::input_parameter< NumericVector& >::type result(resultSEXP);
-    dBvZINB_Expt_vec(xvec, yvec, freq, n, a0, a1, a2, b1, b2, p1, p2, p3, p4, result);
+    Rcpp::traits::input_parameter< NumericVector& >::type expt(exptSEXP);
+    Rcpp::traits::input_parameter< NumericVector& >::type s_i(s_iSEXP);
+    Rcpp::traits::input_parameter< NumericVector& >::type info(infoSEXP);
+    Rcpp::traits::input_parameter< int >::type se(seSEXP);
+    dBvZINB_Expt_vec(xvec, yvec, freq, n, a0, a1, a2, b1, b2, p1, p2, p3, p4, expt, s_i, info, se);
     return R_NilValue;
 END_RCPP
 }
@@ -84,9 +92,9 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_bzinb_em", (DL_FUNC) &_bzinb_em, 10},
-    {"_bzinb_dBvZINB_Expt", (DL_FUNC) &_bzinb_dBvZINB_Expt, 13},
-    {"_bzinb_dBvZINB_Expt_vec", (DL_FUNC) &_bzinb_dBvZINB_Expt_vec, 14},
+    {"_bzinb_em", (DL_FUNC) &_bzinb_em, 12},
+    {"_bzinb_dBvZINB_Expt", (DL_FUNC) &_bzinb_dBvZINB_Expt, 16},
+    {"_bzinb_dBvZINB_Expt_vec", (DL_FUNC) &_bzinb_dBvZINB_Expt_vec, 17},
     {"_bzinb_opt_lb", (DL_FUNC) &_bzinb_opt_lb, 4},
     {NULL, NULL, 0}
 };

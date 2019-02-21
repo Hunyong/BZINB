@@ -10,14 +10,14 @@ using namespace std;
 using namespace Rcpp;
 // [[Rcpp::depends(BH)]]
 
-#define EPSILON 1e-7
-#define EPSILON2 1e-7
+#define EPSILON1 1e-8
+#define EPSILON2 1e-8
 
 // 2. optimization
 double inv_digamma(double x, double y) 
 { 
   double h = (boost::math::digamma(x) - y) / boost::math::trigamma(x);
-  while (fabs(h) >= EPSILON2)
+  while (fabs(h) >= EPSILON1)
   {
     h = (boost::math::digamma(x) - y) / boost::math::trigamma(x);
     while (h > x) {
@@ -86,7 +86,7 @@ void opt_lb(NumericVector& lb, NumericVector &expt, NumericVector &a,  NumericVe
   // double h =  objective(lb, expt, a, idgam) / derivFunc(lb, expt, a, idgam);
   double h = hfunc(lb, expt, a, idgam);
   // cout << "h = " << h << " ";
-  while (fabs(h) >= EPSILON)
+  while (fabs(h) >= EPSILON2)
   {
     // h = objective(lb, expt, a, idgam)/derivFunc(lb, expt, a, idgam);
     // while (h > b1) {

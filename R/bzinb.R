@@ -1,5 +1,7 @@
+#' @import Rcpp BH
+
 # BvZINB4: BvZINB3 + varying zero inflation parameters
-#' library(rootSolve)
+# library(rootSolve)
 
 dBvZINB5 <- function(x, y, a0, a1, a2, b1, b2, p1, p2, p3, p4, log=FALSE) {
   dxy <- dBvNB3(x=x, y=y, a0=a0, a1=a1, a2=a2, b1=b1, b2=b2, log=FALSE)
@@ -80,11 +82,14 @@ if (FALSE) {
   dBvZINB5.Expt.vec(c(10,1,2),c(10,1,1), 1.193013282, 0.003336139, 0.002745513, 3.618842924, 3.341625901, .25,.25,.25,.25)
 }
 
+abp.names <- c("a0", "a1", "a2", "b1", "b2", "p1", "p2", "p3", "p4") # global variable
+expt.names <- c("lik", "ER0", "ER1", "ER2", "ElogR0", "ElogR1", "ElogR2", "EE1", "EE2", "EE3", "EE4", "EV")
 # EM with booster
 # maxiter control added, output =param + lik + #iter
 # Mar 15, 2018: Print pureCor instead of cor
-ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol=1e-8, maxiter=200, showFlag=FALSE,
-                             debug = FALSE, SE = TRUE) {
+ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=30000, showFlag=FALSE,
+                             debug = FALSE, SE = TRUE, vcov = FALSE) {
+  if (!SE & vcov) {warning("To get covariance matrix (vcov), SE should be TRUE. The covariance matrix will not be obtained.")}
   require(rootSolve)
   if (debug) {showFlag=TRUE}
   xy.reduced <- as.data.frame(table(xvec,yvec))
@@ -101,20 +106,22 @@ ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol=1e-8, maxiter=200, 
   
   if (max(xvec)==0 & max(yvec)==0) {return(c(rep(1e-10,5),1,0,0,0, 0, 1, 0, if (SE) {rep(NA, 11)}))} # 9 params, lik, iter, pureCor, and 11 SE's
   #print(xy.reduced)
-  if (SE) { #internal SE function (only use after param is obtained.)
-    .se <- function(param) {
-# print(names(c(list(xy.reduced$x, xy.reduced$y, xy.reduced$freq), as.list(param))))
-# print(c("freq", xy.reduced$freq))
-# print(c("param", param))
-# print(as.list(param))
-      # se <- BZINB5.se(xvec = xy.reduced$x, yvec = xy.reduced$y, freq = xy.reduced$freq, 
-      #                 a0 = param[1], a1 = param[2], a2 = param[3], b1 = param[4],  b2 = param[5], 
-      #                 p1 = param[6], p2 = param[7], p3 = param[8], p4 = param[9])
-      se <- do.call(BZINB5.se, c(list(xy.reduced$x, xy.reduced$y, freq = xy.reduced$freq), as.list(param)))
-      names(se) <- paste0("se.", c("a0", "a1", "a2", "b1", "b2", "p1", "p2", "p3", "p4", "rho", "logit.rho"))
-      se
-    }
-  }
+  info <- if (SE) {matrix(0, ncol = 8, nrow = 8, dimnames = list(abp.names[-9], abp.names[-9]))} else {0}
+#   if (SE) { #internal SE function (only use after param is obtained.)
+#   
+#     .se <- function(param) {
+# # print(names(c(list(xy.reduced$x, xy.reduced$y, xy.reduced$freq), as.list(param))))
+# # print(c("freq", xy.reduced$freq))
+# # print(c("param", param))
+# # print(as.list(param))
+#       # se <- BZINB5.se(xvec = xy.reduced$x, yvec = xy.reduced$y, freq = xy.reduced$freq, 
+#       #                 a0 = param[1], a1 = param[2], a2 = param[3], b1 = param[4],  b2 = param[5], 
+#       #                 p1 = param[6], p2 = param[7], p3 = param[8], p4 = param[9])
+#       se <- do.call(BZINB5.se, c(list(xy.reduced$x, xy.reduced$y, freq = xy.reduced$freq), as.list(param)))
+#       names(se) <- paste0("se.", c(abp.names, "rho", "logit.rho"))
+#       se
+#   }
+# }
 
   # initial guess
   if (is.null(initial)) {
@@ -137,39 +144,98 @@ ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol=1e-8, maxiter=200, 
     if(is.na(sum(initial))) { initial[is.na(initial)] <- 1}
   # print(initial) ###
   } else {
-    names(initial) <- c("a0", "a1", "a2", "b1", "b2", "p1", "p2", "p3", "p4")
+    names(initial) <- abp.names
   }
   
   iter = 0L
-# maxiter = maxiter
-# tol = tol
-# showFlag= showFlag
   param = initial
-  lik = Inf
-  expt = as.double(rep(0, 12))
+  lik = -Inf
+  expt = setNames(as.double(rep(0, 12)), expt.names)
   # print(c(param, showFlag, iter))
   em(param = param, xvec = xy.reduced$x, yvec = xy.reduced$y, 
-     freq = xy.reduced$freq, n = n.reduced, expt = expt, 
-     iter = as.integer(iter), maxiter = maxiter, tol = tol, 
+     freq = xy.reduced$freq, n = n.reduced, expt = expt, info = info,
+     se = as.integer(SE), iter = as.integer(iter), 
+     maxiter = as.integer(maxiter), tol = as.double(tol), 
      showFlag = as.integer(showFlag))
-tmp.expt <<- expt
+
+  # underlying correlation (rho)
+  rho <- param[1]/sqrt((param[1] + param[2]) * (param[1] + param[3])) *
+    sqrt(param[4] * param[5] /(param[4] + 1) /(param[5] + 1))
+  logit.rho <- qlogis(rho)
+  
+  if (SE) {
+    if (qr(info)$rank < 8) {
+      warning ("The information matrix is (essentially) not full rank, and thus the standard error is not reliable.")
+      std.param = setNames(rep(NA, 11), c(abp.names, "rho", "logit.rho"))
+      cov.mat <- NA
+    } else {
+      cov.mat <- try(solve(info))
+      if (class(cov.mat) == "try-error") {
+        std.param = setNames(rep(NA, 11), c(abp.names, "rho", "logit.rho"))
+        cov.mat <- NA
+      } else {
+        # variance of p4 hat
+        var.p4 <- sum (cov.mat[6:8, 6:8]) # = sum_i,j cov(pi, pj)
+        
+        # variance of rho hat
+        # rho <- a0/sqrt((a0 + a1) * (a0 + a2)) *sqrt(b1 *b2 /(b1 + 1) /(b2 + 1))
+        
+        # d.g <- rho * c(1/a0 - 1/{2*(a0 + a1)} - 1/{2*(a0 + a2)}, - 1/{2*(a0 + a1)}, - 1/{2*(a0 + a2)},
+        #                1/{2 *b1 *(b1 + 1)}, 1/{2 *b2 *(b2 + 1)})
+        d.g <- rho * c(1/param[1] - 1/{2*(param[1] + param[2])} - 1/{2*(param[1] + param[3])}, 
+                       - 1/{2*(param[1] + param[2])}, 
+                       - 1/{2*(param[1] + param[3])},
+                       1/{2 *param[4] *(param[4] + 1)}, 
+                       1/{2 *param[5] *(param[5] + 1)})
+        
+        var.rho <- t(d.g) %*% cov.mat[1:5, 1:5] %*% d.g
+        
+        # variance of logit(rho hat)
+        var.logit.rho <- var.rho / rho / (1-rho)
+        # std.param = sqrt(c(setNames(diag(cov.mat), abp.names[1:8]), 
+        #                    p4 = var.p4, rho=var.rho, logit.rho = var.logit.rho))
+        std.param = sqrt(c(diag(cov.mat), 
+                           p4 = var.p4, rho=var.rho, logit.rho = var.logit.rho))
+      }
+    } 
+    
+  }
+
   # print(c(param, showFlag, iter))  
-  result <- c(a0 = param[1], a1 = param[2], a2 = param[3], b1 = param[4], b2 = param[5], 
-              p1 = param[6], p2 = param[7], p3 = param[8], p4 = param[9], lik = expt[1], iter = iter)
+  result <- list(call = call,
+                 rho = matrix(c(rho, logit.rho, if(SE) std.param[c("rho", "logit.rho")] else rep(NA, 2)),
+                              ncol = 2, dimnames = list(c("rho", "logit.rho"), c("Estimate", "Std.err"))),
+                 coefficients = matrix(c(param, if(SE) std.param[1:9] else rep(NA, 9)),
+                                       ncol = 2, dimnames = list(abp.names, c("Estimate", "Std.err"))), 
+                 lik = expt[1],
+                 iter = iter)
+  if (SE & vcov) {
+    result$info = NA
+    result$vcov = NA
+  }
   return(result)
 }
 #' @useDynLib bzinb
 #' @export
-#' @import Rcpp BH
 ML.BvZINB5 <- function(xvec, yvec, ...) {
   # if (!is.integer(xvec) | !is.integer(yvec)) stop("xvec and yvec should be integers.")
   # nonnegative
   # len(xvec) == len(yvec)
   # any(is.na(xvec))
-  
+  call <- match.call()
   result <- try(ML.BvZINB5.base(xvec,yvec, ...))
   if (class(result)=="try-error") {
-    result <- c(rep(NA,5+4), NA, 0)
+    result <- list(call = call,
+                   rho = matrix(rep(NA, 4),
+                                ncol = 2, dimnames = list(c("rho", "logit.rho"), c("Estimate", "Std.err"))),
+                   coefficients = matrix(rep(NA, 9),
+                                         ncol = 2, dimnames = list(abp.names, c("Estimate", "Std.err"))), 
+                   lik = NA,
+                   iter = NA)
+    if (SE & vcov) {
+      result$info = NA
+      result$vcov = NA
+    }
   }
   return(result)
 }
@@ -197,7 +263,7 @@ if (FALSE) {
   # iter = 2059, likelihood = -2987.08
   ML.BvZINB5(tmp[,1], tmp[,2], maxiter=2, showFlag=F, initial = c(a0 = 0.865977, a1 = 1.00028, a2 = 1.11896, b1 = 1.11955, b2 = 1.01823, p1 = 0.962907, p2 = 0.00529951, p3 = 1.62319e-27, p4 = 0.0317939))
   
-  maxiter = 500; a1 <- Sys.time();( b1 <- ML.BvZINB5.old(tmp[,1], tmp[,2], maxiter=maxiter, showFlag=F)); a2 <- Sys.time(); cat("New method\n"); (b2 <- ML.BvZINB5(tmp[,1], tmp[,2], maxiter=maxiter, showFlag=F)); a3 <- Sys.time();  a2-a1; a3-a2; cat("diff(lik) ", b2[10] - b1[10], "iters (old, new) ", b2[11], b1[11])
+  maxiter = 60000; a1 <- Sys.time();( b1 <- ML.BvZINB5.old(tmp[,1], tmp[,2], maxiter=maxiter, showFlag=F)); a2 <- Sys.time(); cat("New method\n"); (b2 <- ML.BvZINB5(tmp[,1], tmp[,2], maxiter=maxiter, showFlag=F)); a3 <- Sys.time();  a2-a1; a3-a2; cat("diff(lik) = ", b2[10] - b1[10], ", iters (old, new) ", b2[11], b1[11])
 }
 
 #' @useDynLib bzinb
