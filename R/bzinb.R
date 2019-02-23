@@ -164,7 +164,12 @@ ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=300
   logit.rho <- qlogis(rho)
   
   if (SE) {
-    if (qr(info)$rank < 8) {
+    qr.info <- try(qr(info))
+    if (class(qr.info) == "try-error") {
+      warning ("The information matrix has NA/NaN/Inf and thus the standard error is not properly estimatd.")
+      std.param = setNames(rep(NA, 11), c(abp.names, "rho", "logit.rho"))
+      cov.mat <- NA
+    } else if (qr(info)$rank < 8) {
       warning ("The information matrix is (essentially) not full rank, and thus the standard error is not reliable.")
       std.param = setNames(rep(NA, 11), c(abp.names, "rho", "logit.rho"))
       cov.mat <- NA
@@ -210,8 +215,8 @@ ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=300
                  lik = expt[1],
                  iter = iter)
   if (SE & vcov) {
-    result$info = NA
-    result$vcov = NA
+    result$info = info
+    result$vcov = cov.mat
   }
   return(result)
 }

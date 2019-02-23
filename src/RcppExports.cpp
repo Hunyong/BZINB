@@ -77,6 +77,18 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// inv_digamma
+double inv_digamma(double x, double y);
+RcppExport SEXP _bzinb_inv_digamma(SEXP xSEXP, SEXP ySEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type x(xSEXP);
+    Rcpp::traits::input_parameter< double >::type y(ySEXP);
+    rcpp_result_gen = Rcpp::wrap(inv_digamma(x, y));
+    return rcpp_result_gen;
+END_RCPP
+}
 // opt_lb
 void opt_lb(NumericVector& lb, NumericVector& expt, NumericVector& a, NumericVector& idgam);
 RcppExport SEXP _bzinb_opt_lb(SEXP lbSEXP, SEXP exptSEXP, SEXP aSEXP, SEXP idgamSEXP) {
@@ -95,6 +107,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_bzinb_em", (DL_FUNC) &_bzinb_em, 12},
     {"_bzinb_dBvZINB_Expt", (DL_FUNC) &_bzinb_dBvZINB_Expt, 16},
     {"_bzinb_dBvZINB_Expt_vec", (DL_FUNC) &_bzinb_dBvZINB_Expt_vec, 17},
+    {"_bzinb_inv_digamma", (DL_FUNC) &_bzinb_inv_digamma, 2},
     {"_bzinb_opt_lb", (DL_FUNC) &_bzinb_opt_lb, 4},
     {NULL, NULL, 0}
 };

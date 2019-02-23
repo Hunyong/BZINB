@@ -8,6 +8,7 @@
 #include <boost/math/special_functions/trigamma.hpp>
 using namespace std;
 using namespace Rcpp;
+// #define DEBUG4
 // [[Rcpp::depends(BH)]]
 
 // 3. EM
@@ -27,12 +28,13 @@ void em(NumericVector& param, const IntegerVector &xvec, const IntegerVector &yv
   while(maxiter > iter[0] && param_diff > tol)
   {
     // cout << "param_diff = " << param_diff << " ";
-    if (showFlag == 1) {
-      cout << "iter = " << iter[0]  << ", likelihood = " << expt[0] << endl <<
+    if (showFlag > 0 & iter[0] > showFlag) {
+      Rcout << "iter = " << iter[0]  << ", likelihood = " << expt[0] << endl <<
       "  (a0-2, b1-2, p1-4) = (" << param[0] << ", " << param[1] << ", " << param[2] << 
         ", " << param[3] << ", " << param[4] << ", " << param[5] << ", " << param[6] << 
           ", " << param[7] << ", " << param[8] << ")" << endl;
     }
+
     iter[0] += 1;
     //cout << "maxiter = " << maxiter << " iter1 = " << iter[0] << endl;  
     for(int i = 0;i < 9;i++)
@@ -49,9 +51,33 @@ void em(NumericVector& param, const IntegerVector &xvec, const IntegerVector &yv
       param[5 + i] = expt[7 + i];
     }
     lb[0] = log(param[3]);
+#ifdef DEBUG4
+    for (int i = 0; i < 12; i++) 
+    {
+      if (i == 0) {Rcout << "expt: ";}
+      Rcout << expt[i] << " ";
+      if (i == 11) {Rcout << "lb = " << lb[0] << endl;}
+    }
+    for (int i = 0; i < 8; i++) 
+    {
+      if (i == 0) {Rcout << "param: ";}
+      Rcout << param[i] << " ";
+      if (i == 7) {Rcout <<  endl;}
+    }
+    for (int i = 0; i < 3; i++) 
+    {
+      if (i == 0) {Rcout << "idgam: ";}
+      Rcout << idgam[i] << " ";
+      if (i == 3) {Rcout <<  endl;}
+    }
+    Rcout << "before opt_lb! (of iter" << iter << ") ";
+#endif
     //if (iter[0] > 2058) {cout << "before opt_lb" << endl;}
     // Finding optimized a0, a1, a2, b1
     opt_lb(lb, expt, param, idgam);
+#ifdef DEBUG4
+  Rcout << ", after opt_lb! (of iter" << iter << ") "<< endl;
+#endif
     //if (iter[0] > 2058) {cout << "before opt_lb" << endl;}
     param[3] = exp(lb[0]);
     param[4] = param[3] * delta;
