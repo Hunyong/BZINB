@@ -1,7 +1,7 @@
 Package: bzinb
 Type: Package
 Title: Bivariate Zero-Inflated Negative Binomial Model Estimator
-Version: 0.1.8
+Version: 0.1.9
 Author: Hunyong Cho
 Maintainer: Hunyong Cho <hunycho@live.unc.edu>
 Description: This package provides a maximum likelihood estimation of Bivariate Zero-Inflated Negative Binomial (BZINB) model or the nested model parameters. It also estimates the underlying correlation of the a pair of count data. See Cho, H., Preisser, J., and Wu, D. (2019+) for details.

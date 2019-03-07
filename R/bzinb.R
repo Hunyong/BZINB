@@ -87,7 +87,7 @@ expt.names <- c("lik", "ER0", "ER1", "ER2", "ElogR0", "ElogR1", "ElogR2", "EE1",
 # EM with booster
 # maxiter control added, output =param + lik + #iter
 # Mar 15, 2018: Print pureCor instead of cor
-ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=30000, showFlag=FALSE,
+ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=50000, showFlag=FALSE,
                              debug = FALSE, SE = TRUE, vcov = FALSE) {
   if (!SE & vcov) {warning("To get covariance matrix (vcov), SE should be TRUE. The covariance matrix will not be obtained.")}
   require(rootSolve)
@@ -196,7 +196,7 @@ ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=300
         var.rho <- t(d.g) %*% cov.mat[1:5, 1:5] %*% d.g
         
         # variance of logit(rho hat)
-        var.logit.rho <- var.rho / rho / (1-rho)
+        var.logit.rho <- var.rho / rho^2 / (1-rho)^2
         # std.param = sqrt(c(setNames(diag(cov.mat), abp.names[1:8]), 
         #                    p4 = var.p4, rho=var.rho, logit.rho = var.logit.rho))
         std.param = sqrt(c(diag(cov.mat), 
