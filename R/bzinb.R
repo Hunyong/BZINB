@@ -286,3 +286,96 @@ opt <- function(b1, expt, a) {
   return(c(a, b1))
 }
 
+
+#' @useDynLib bzinb
+#' @export
+BZINB5.se <- function(xvec, yvec, param = NULL, ...) {
+  if (any(!is.finite(param))) {return(rep(NA, 10))}
+  xy.reduced <- as.data.frame(table(xvec,yvec))
+  names(xy.reduced) <- c("x", "y","freq")
+  xy.reduced <- xy.reduced[xy.reduced$freq != 0,]
+  xy.reduced$x <- as.numeric(as.character(xy.reduced$x))
+  xy.reduced$y <- as.numeric(as.character(xy.reduced$y))
+  xy.reduced$freq <- as.numeric(as.character(xy.reduced$freq))
+  n <- sum(xy.reduced$freq)
+  n.reduced <- as.integer(length(xy.reduced$freq))
+  
+  if (is.null(param)) {
+    warning("param was not provided. It will be estimated.")
+    est <- ML.BvZINB5(xvec, yvec, ...)
+    param <- unlist(est$coefficients[,1])
+    iter <- est$iter
+  } else {
+    iter <- NA
+  }
+  
+  if (any(is.na(param))) {
+    warning("params include NA.")
+    result <- list(rho = matrix(rep(NA, 4),
+                                ncol = 2, dimnames = list(c("rho", "logit.rho"), c("Estimate", "Std.err"))),
+                   coefficients = matrix(rep(NA, 18),
+                                         ncol = 2, dimnames = list(abp.names, c("Estimate", "Std.err"))), 
+                   lik = NA, iter = NA, info = NA, vcov = NA)
+    return(result)
+  }
+  
+  rho <- param[1]/sqrt((param[1] + param[2]) * (param[1] + param[3])) * 
+    sqrt(param[4] *param[5] /(param[4] + 1) /(param[5] + 1))
+  logit.rho <- qlogis(rho)
+  
+  expt = setNames(as.double(rep(0, 12)), expt.names)
+  s_i = setNames(as.double(rep(0, 8)), abp.names[-9])
+  info <- matrix(0, ncol = 8, nrow = 8, dimnames = list(abp.names[-9], abp.names[-9]))
+  dBvZINB_Expt_vec (xvec = xy.reduced$x, yvec = xy.reduced$y, freq = xy.reduced$freq, n = n.reduced, 
+                    a0 = param[1], a1 = param[2], a2 = param[3], b1 = param[4], b2 = param[5], 
+                    p1 = param[6], p2 = param[7], p3 = param[8], p4 = param[9], 
+                    expt = expt, s_i = s_i, info = info, se = 1)
+  
+  
+  # inverse of info
+  qr.info <- try(qr(info))
+  if (class(qr.info) == "try-error") {
+    warning ("The information matrix has NA/NaN/Inf and thus the standard error is not properly estimatd.")
+    std.param = setNames(rep(NA, 11), c(abp.names, "rho", "logit.rho"))
+    cov.mat <- NA
+  } else if (qr(info)$rank < 8) {
+    warning ("The information matrix is (essentially) not full rank, and thus the standard error is not reliable.")
+    std.param = setNames(rep(NA, 11), c(abp.names, "rho", "logit.rho"))
+    cov.mat <- NA
+  } else {
+    cov.mat <- try(solve(info))
+    if (class(cov.mat) == "try-error") {
+      std.param = setNames(rep(NA, 11), c(abp.names, "rho", "logit.rho"))
+      cov.mat <- NA
+    } else {
+      # variance of p4 hat
+      var.p4 <- sum (cov.mat[6:8, 6:8]) # = sum_i,j cov(pi, pj)
+      
+      # variance of rho hat
+      d.g <- rho * c(1/param[1] - 1/{2*(param[1] + param[2])} - 1/{2*(param[1] + param[3])}, 
+                     - 1/{2*(param[1] + param[2])}, 
+                     - 1/{2*(param[1] + param[3])},
+                     1/{2 *param[4] *(param[4] + 1)}, 
+                     1/{2 *param[5] *(param[5] + 1)})
+      
+      var.rho <- t(d.g) %*% cov.mat[1:5, 1:5] %*% d.g
+      
+      # variance of logit(rho hat)
+      var.logit.rho <- var.rho / rho^2 / (1-rho)^2
+      # std.param = sqrt(c(setNames(diag(cov.mat), abp.names[1:8]), 
+      #                    p4 = var.p4, rho=var.rho, logit.rho = var.logit.rho))
+      std.param = sqrt(c(diag(cov.mat), 
+                         p4 = var.p4, rho=var.rho, logit.rho = var.logit.rho))
+    }
+  } 
+  
+  result <- list(rho = matrix(c(rho, logit.rho, std.param[c("rho", "logit.rho")]),
+                              ncol = 2, dimnames = list(c("rho", "logit.rho"), c("Estimate", "Std.err"))),
+                 coefficients = matrix(c(param, std.param[1:9]),
+                                       ncol = 2, dimnames = list(abp.names, c("Estimate", "Std.err"))), 
+                 lik = expt[1],
+                 iter = iter,
+                 info = info,
+                 vcov = cov.mat)
+  return(result)
+}

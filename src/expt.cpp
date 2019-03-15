@@ -99,7 +99,7 @@ void dBvZINB_Expt(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
   long double l3_B = (x!=0?0.0:(exp(- (y + a0 + a2) * log(1.0 + b2) + y * log(b2) + adj_B1) * p3));
   long double l4_B = ((x+y!=0)?0.0:( p4 * exp(adj_B1)));
   
-  long double sum_A = 0, sum_AC = 0, sum_A_mat = 0, sum_C_mat = 0;
+  long double sum_A = 0, sum_C = 0, sum_AC = 0;
   
   long double R0_mat[x+1][y+1], R1_mat[x+1][y+1], R2_mat[x+1][y+1], log_R0_mat[x+1][y+1]; 
   long double log_R1_mat[x+1][y+1], log_R2_mat[x+1][y+1], log_R0_mat2[x+1], log_R0_mat3[y+1];
@@ -107,15 +107,14 @@ void dBvZINB_Expt(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
   long double log_R1_mat2[x+1], log_R2_mat2[x+1], log_R1_mat3[y+1], log_R2_mat3[y+1];
   long double l_C_mat[x+1][y+1], l_AC_mat[x+1][y+1];
   
-  
   for(int i = 0;i <= x;i++)
   {
     for(int j = 0;j <= y;j++)
     {
       l1(x, y, a0, a1, a2, i, j, l_A_mat[i][j], adj_A);  // updating l_A_mat[i][j]
       l1_c(t1, t2, i, j, l_C_mat[i][j], adj_C);
-      sum_A_mat += l_A_mat[i][j];
-      sum_C_mat += l_C_mat[i][j];
+      sum_A += l_A_mat[i][j];
+      sum_C += l_C_mat[i][j];
       //cout << i <<" "<<j<<" "<< l_A_mat[i][j] << endl;
       //system("pause");
     }
@@ -130,16 +129,16 @@ void dBvZINB_Expt(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
   l1_B = exp(l1_B) * p1;
   //cout << l1_B <<endl;
   
-  while (log(sum_A_mat) > 250)
+  while (log(sum_A) > 250)
   {
-    sum_A_mat = 0;
+    sum_A = 0;
     adj_A += 200;
     for(int i = 0;i <= x;i++)
     {
       for(int j = 0;j <= y;j++)
       {
         l1(x, y, a0, a1, a2, i, j, l_A_mat[i][j], adj_A);
-        sum_A_mat += l_A_mat[i][j];
+        sum_A += l_A_mat[i][j];
       }
     }
   }
@@ -151,19 +150,21 @@ void dBvZINB_Expt(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
   {
     l3_A(y, a0, a1, a2, j, l3_A_mat[j], adj_A) ; //update l3_A_mat[i]
   }
-  while (log(sum_C_mat) > 250)
+  while (log(sum_C) > 250)
   {
-    sum_C_mat = 0;
+    sum_C = 0;
     adj_C += 200;
     for(int i = 0;i <= x;i++)
     {
       for(int j = 0;j <= y;j++)
       {
         l1_c(t1, t2, i, j, l_C_mat[i][j], adj_C); //update l_C_mat[i][j] 
-        sum_C_mat += l_C_mat[i][j];
+        sum_C += l_C_mat[i][j];
       }
     }
   }
+  sum_A = 0;
+  sum_AC = 0;
   for(int i = 0;i <= x;i++)
   {
     for(int j = 0;j <= y;j++)
@@ -332,14 +333,89 @@ void dBvZINB_Expt(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
   expt[11] += v_E * freq; //change lines between E_E and v_E;
   
   if (se == 1) {
-    s_i[0] = R0_E - log(b1) - boost::math::digamma(a0); //l_a0
-    s_i[1] = R1_E - log(b1) - boost::math::digamma(a1); //l_a1
-    s_i[2] = R2_E - log(b1) - boost::math::digamma(a2); //l_a2
-    s_i[3] = - (v_E + a0 + a1 + a2)/b1 + (R0_E + R2_E) * (b2 + 1)/b1/b1 + R1_E/b1/b1; //l_b1
-    s_i[4] = v_E/b2 - (R0_E + R2_E) /b1; //l_b2
-    s_i[5] = E_E1/p1 - E_E4/p4; //l_p1
-    s_i[6] = E_E2/p2 - E_E4/p4; //l_p2
-    s_i[7] = E_E3/p3 - E_E4/p4; //l_p3
+    double Dvec[9];
+    double zeta_xy = 0.0;
+    
+    for (int i=0; i<9; i++) {
+      Dvec[i] = 0;
+    }   
+    //Dvec[0] ~ Dvec[4];
+    // part I (functional componenets only)
+    for (int i = 0; i <= x; i++) {
+      for (int j = 0; j <= y; j++) {
+        Dvec[0] += l_A_mat[i][j] * exp(adj_sum) * l_C_mat[i][j] * boost::math::digamma(x - i + y - j + a0);
+//cout << "elements["  << i << "]["<< j << "]: "  << l_A_mat[i][j] * exp(adj_sum) * l_C_mat[i][j] * boost::math::digamma(x - i + y - j + a0) << endl;
+        Dvec[1] += l_A_mat[i][j] * exp(adj_sum) * l_C_mat[i][j] * boost::math::digamma(a1 + i);
+        Dvec[2] += l_A_mat[i][j] * exp(adj_sum) * l_C_mat[i][j] * boost::math::digamma(a2 + j);
+        Dvec[3] += l_A_mat[i][j] * exp(adj_sum) * l_C_mat[i][j] * (x/b1 - (x + y - i - j + a0) / (b1 + b2 + 1) - (a1 + i)/(b1 + 1));
+        Dvec[4] += l_A_mat[i][j] * exp(adj_sum) * l_C_mat[i][j] * (y/b2 - (x + y - i - j + a0) / (b1 + b2 + 1) - (a2 + j)/(b2 + 1));
+      }
+    }
+//cout << "Dvec (line 343): " << Dvec[0] << endl; 
+    // part II (adding & multiplying constants)
+    //l1_b has pi_1 multiplied, but for Dvec[0] ~ Dvec[4] pi_1 should not be removed, but later this will be cancelled by not doing lines around 384.
+    Dvec[0] = (Dvec[0] * l1_B - sum_AC * exp(adj_sum) * l1_B * (boost::math::digamma(a0) + log(b1 + b2 + 1)));
+    Dvec[1] = (Dvec[1] * l1_B - sum_AC * exp(adj_sum) * l1_B * (boost::math::digamma(a1) + log(b1 + 1)));
+    Dvec[2] = (Dvec[2] * l1_B - sum_AC * exp(adj_sum) * l1_B * (boost::math::digamma(a2) + log(b2 + 1)));
+    Dvec[3] *= l1_B;
+    Dvec[4] *= l1_B;
+//cout << "Dvec (line 357): " << Dvec[0] << endl;
+    // part III (back-adjustments)
+    for (int i = 0; i < 5; i++) {
+      Dvec[i] *= exp(adj_A + adj_C - adj_B1 - adj_sum);
+    }
+//cout << "Dvec (line 362): " << Dvec[0] << endl;
+    
+    //Dvec[5] ~ Dvec[8]; They are only needed when the counterpart (y and x) are zero: so zeta(y) or zeta(x) are already applied.
+    double fx = 0, fy = 0;
+    if (y == 0) {
+      fx = lgamma(x + a0 + a1) - lgamma(x + 1) - lgamma(a0 + a1) + x * log(b1) - (x + a0 + a1) * log(b1 + 1);
+      fx = exp(fx);
+      Dvec[5] = fx * (boost::math::digamma(x + a0 + a1) - boost::math::digamma(a0 + a1) - log(b1 + 1));
+      Dvec[6] = fx * (x/b1 - (x + a0 + a1)/(b1 + 1));
+    }
+    if (x == 0) {
+      fy = lgamma(y + a0 + a2) - lgamma(y + 1) - lgamma(a0 + a2) + y * log(b2) - (y + a0 + a2) * log(b2 + 1);
+      fy = exp(fy);
+      Dvec[7] = fy * (boost::math::digamma(y + a0 + a2) - boost::math::digamma(a0 + a2) - log(b2 + 1));
+      Dvec[8] = fy * (y/b2 - (y + a0 + a2)/(b2 + 1));
+    }
+    
+    // part IV Dvec[?] x pi
+    
+    // Dvec[0] ~ Dvec[4] has been already multiplied by pi_1. So this should not be done again.
+    // for (int i = 0; i < 5; i++) {
+    //   Dvec[i] *= p1;
+    // }
+    for (int i = 5; i < 7; i++) {
+      Dvec[i] *= p2;
+    }
+    for (int i = 7; i < 9; i++) {
+      Dvec[i] *= p3;
+    }
+    
+// cout << "Dvec: " ;  
+// for (int i = 0; i <9; i++) {
+//   cout << "[" << i << "]: " << Dvec[i] << " ";
+// }
+// cout << endl;
+    
+    s_i[0] = Dvec[0] + Dvec[5] + Dvec[7];
+    s_i[1] = Dvec[1] + Dvec[5];
+    s_i[2] = Dvec[2] + Dvec[7];
+    s_i[3] = Dvec[3] + Dvec[6];
+    s_i[4] = Dvec[4] + Dvec[8];
+    if (x == 0 && y == 0) {zeta_xy = 1.0;}
+    s_i[5] = sum_AC * exp(adj_sum) * l1_B * exp(adj_A + adj_C - adj_B1 - adj_sum) - zeta_xy; //f_BNB(x, y)
+    s_i[6] = fy - zeta_xy;  // fy is by default 0 if x == 0;
+    s_i[7] = fx - zeta_xy;  // fx is by default 0 if y == 0;
+    
+    // Finally, divide s_i by the density (f_bzinb)
+    for (int i = 0; i <8; i++) {
+//cout << "si[" << i << "]: " << s_i[i] << " before / after ";      
+      s_i[i] /= (l_sum * exp(adj_A - adj_B1 + adj_C - adj_sum));
+//cout << s_i[i] << endl;
+    }
     
     for (int i = 0; i < 8; i++) {
       for (int j = 0; j < 8; j++) {
@@ -348,6 +424,7 @@ void dBvZINB_Expt(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
     }
   }
 }
+
 // [[Rcpp::export]]
 void dBvZINB_Expt_vec(const IntegerVector &xvec, const IntegerVector &yvec, const IntegerVector &freq, 
                       const int &n, double &a0, double &a1, double &a2,
