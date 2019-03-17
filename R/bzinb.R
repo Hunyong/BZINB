@@ -227,11 +227,12 @@ ML.BvZINB5 <- function(xvec, yvec, ...) {
   # nonnegative
   # len(xvec) == len(yvec)
   # any(is.na(xvec))
+  xvec = as.integer(round(xvec, digits = 0))
+  yvec = as.integer(round(yvec, digits = 0))
   call <- match.call()
   result <- try(ML.BvZINB5.base(xvec,yvec, ...))
   if (class(result)=="try-error") {
-    result <- list(call = call,
-                   rho = matrix(rep(NA, 4),
+    result <- list(rho = matrix(rep(NA, 4),
                                 ncol = 2, dimnames = list(c("rho", "logit.rho"), c("Estimate", "Std.err"))),
                    coefficients = matrix(rep(NA, 9),
                                          ncol = 2, dimnames = list(abp.names, c("Estimate", "Std.err"))), 
