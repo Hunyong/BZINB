@@ -3,7 +3,7 @@
 #' @examples 
 #' # A sample data with 4 genes and sample size of 30
 #' set.seed(1)
-#' tmp = t(sapply(1:4, rBvZINB5, n = 30, param = c(1, 1, 1, 1, 1, .5, .2, .2, .1)))
+#' tmp = t(sapply(1:4, rbzinb, n = 30, param = c(1, 1, 1, 1, 1, .5, .2, .2, .1)))
 #' # Calculating all six pairwise gene-gene correlations
 #' pairwise.bzinb(tmp, showFlag = TRUE)
 pairwise.bzinb <- function(data, nonzero.prop = TRUE, fullParam = FALSE, 
@@ -27,7 +27,7 @@ pairwise.bzinb <- function(data, nonzero.prop = TRUE, fullParam = FALSE,
     # if (s[1] <= 6 | s[2] <=23) {return(data.frame(matrix(NA,1,4)))} # debug #7,24 has problem
     x <- data[s[1], ]
     y <- data[s[2], ]
-    result <- ML.BvZINB5(xvec = x, yvec = y, ...)
+    result <- bzinb(xvec = x, yvec = y, ...)
     
     if (showFlag) cat("pair ", s[1], "-", s[2], ": ", "(rho, se.rho) = (", 
                       formatC(result$rho[1,1], digits = 5, format = "f", flag = "0"), ", ", 
@@ -71,7 +71,7 @@ screened.length <- function(data, geneset, cut = .1, exclude.col = 1) {
 }
 
 
-# binary profile function: for ML.BZIP.B
+# binary profile function: for BZIP.B
 bin.profile <- function(xvec, yvec) {
   xvec[xvec != 0] = 1
   yvec[yvec != 0] = 1
@@ -85,5 +85,35 @@ bin.profile <- function(xvec, yvec) {
 }
 
 .check.input <- function(xvec, yvec) {
-  
+  if(any(xvec < 0) | any(yvec < 0)) {stop("xvec, yvec should be > 0.")}
+  if(!length(xvec) == length(yvec)){stop("The length of xvec and yvec should be the same.")}
 }
+
+.check.initials <- function(a0=NULL, a1=NULL, a2=NULL, b1=NULL, b2=NULL, p1=NULL, p2=NULL, p3=NULL, p4=NULL){
+  mf <- match.call(expand.dots = FALSE)
+  m <- match(c("a0", "a1", "a2", "b1", "b2", "p1", "p2", "p3", "p4"), names(mf), 0L)
+  if (all(m == 0)) {
+    return(NULL)
+  } else if (!all(m != 0)){
+    stop("Either every parameter is provided or none of them should be provided.")
+  }
+  
+  tmp.ab <- c(a0, a1, a2, b1, b2)
+  
+  if(any(tmp.ab <= 0)) {
+    stop('a0, a1, a2, b1, b2, p1, p2, p3, p4 should be greater than 0.')
+  } 
+  
+  
+  tmp.p <- c(p1, p2, p3, p4)
+  
+  if (any(tmp.p < 0) | any(tmp.p > 1)){
+    stop('p1, p2, p3, p4 should be >= 0 and <= 1.')
+  } 
+  
+  
+  if(!sum(tmp.p) == 1){
+    stop(paste('sum of p1-p4 should be 1.'))
+  }
+}
+
