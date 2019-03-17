@@ -1,122 +1,60 @@
-## 1.1 pairwise association macro
-pairwise.dep <- function(data, measure, name, nondata.col = 1, p.nonzero = TRUE, rm.id.vec = TRUE, log.data = FALSE, add.log = 1, p.value = FALSE, ...) {
-  # data: a dataframe of which pairs are to be analyzed
-  # measure can be either a function or a list of functions
-  # nondata.col: the column number to be ignored for measurement eg. first col (gene names)
-  # name: list of names of the association measures (need to find some code to extract from the list of functions)
-  # log, add.log: log tansformation, addition before log transformation
-  # p.nonzero: show proportion of non-zero values
-  # p.value: Calculate the p-values by permutation test
-  data <- as.matrix(data[,-nondata.col])
-  if (log.data) {data <- log(data + add.log)}
+#' @useDynLib bzinb
+#' @export
+#' @examples 
+#' # A sample data with 4 genes and sample size of 30
+#' set.seed(1)
+#' tmp = t(sapply(1:4, rBvZINB5, n = 30, param = c(1, 1, 1, 1, 1, .5, .2, .2, .1)))
+#' # Calculating all six pairwise gene-gene correlations
+#' pairwise.bzinb(tmp, showFlag = TRUE)
+pairwise.bzinb <- function(data, nonzero.prop = TRUE, fullParam = FALSE, 
+                         showFlag = FALSE, ...) {
+  # data: a dataframe of which pairs are to be analyzed. rows = genes, cols = sample
+  # nonzero.prop: include nonzero proportion in the result
+  if (is.data.frame(data)) {
+    data <- as.matrix(data)
+  } else if (!is.matrix(data)) {
+    stop ("data is neither matrix nor data.frame.")
+  }
+  
   dim.p <- dim(data)[1]
-  comb <- expand.grid(1:dim.p,1:dim.p)
-  if (rm.id.vec)  {rw <- which(comb[,1] > comb[,2])} else {rw <- which(comb[,1] >= comb[,2])}
-  comb <- data.frame(comb[rw,c(2,1)])
-  # [lower.tri(matrix(1:dim.p^2,dim.p),TRUE),][,c(2,1)]
-  # comb <- data.frame(t(combn(1:dim.p,2)))
-  comb$pair <- apply(comb,1,function(x) paste(x,collapse="-"))
-
-  # function of a measurement
-  fun.measure <- function(measure0, comb0 = comb, data0 = data, p.value0 = p.value, ...) {
-    a <- sapply(1:dim(comb0)[1], function(i) {
-      x1 <- data0[comb0[i,1],]
-      x2 <- data0[comb0[i,2],]
-      point.est <- try(measure0(x1, x2, ...),silent=TRUE)
-      point.est <- ifelse(class(point.est)=="try-error",NA, point.est)
-      if (p.value0 == TRUE) {
-        if (is.na(point.est) == FALSE) {
-          p.val <- p.permutation(x1, x2, measure = measure0, point.est = point.est, ...)$p.val
-        } else {p.val <- NA}
-        return(data.frame(point.est=point.est, p.val=p.val))
-      } else {return(data.frame(point.est=point.est, p.val=NA))}
-    }
-    )
-    return(as.data.frame(t(a)))
-  }
-  if (class(measure) != "list") {measure <- list(measure)}
-  ##sapply(measure, fun.measure)
-
-  storage <- list(); j = 0
-  for (x in measure) {
-    j = j + 1
-    storage[[j]] <- fun.measure(x)
-    names(storage)[j] <- name[j]
-  }
-  for (k in 1:length(measure)) {comb <- cbind(comb, unlist(storage[[k]]$point.est))}
-  for (k in 1:length(measure)) {comb <- cbind(comb, unlist(storage[[k]]$p.val))}
-  names(comb) <- c(1,2,"pair", name, paste0(name,".p.val"))
-
-  if (p.nonzero == TRUE) {
-    n <- dim(data)[2]
-    comb$non0.1 <- sapply(1:dim(comb)[1], function(i) {sum(data[comb[i,1],] != 0) / n})
-    comb$non0.2 <- sapply(1:dim(comb)[1], function(i) {sum(data[comb[i,2],] != 0) / n})
-    comb$non0.min <- pmin(comb$non0.1,comb$non0.2)
-  }
-  return(comb)
-}
-
-if (FALSE) {
-  # example
-  pairwise.dep(matrix(1:100,5), mi.empirical.2, name = "mi", p.value=TRUE,n.permutation=20)
-  pairwise.dep(matrix(1:100,5), cor, name = "cor")
-  pairwise.dep(matrix(0,5,20), mi.empirical.2, name = "mi")  #all zero data -> all NA
-  pairwise.dep(matrix(1:100,5), list(cor, mi.empirical.2), name = c("cor","MI"), log = TRUE)
-  pairwise.dep(matrix(1:100,5), list(cor, mi.empirical.2), name = c("cor","MI"), p.value=TRUE, n.permutation=20)
-}
-
-
-pairwise.MLE <- function(data, ML.fun, nondata.col = 1, p.nonzero = TRUE, rm.id.vec = TRUE, print.each.pair=TRUE, ...) {
-  # data: a dataframe of which pairs are to be analyzed
-  # nondata.col: the column number to be ignored for measurement eg. first col (gene names)
-  # name: short name for the distribution
-  # p.nonzero: include nonzero proportion in the result
-  data <- as.matrix(data[,-nondata.col])
-  dim.p <- dim(data)[1]
-  comb <- expand.grid(1:dim.p,1:dim.p)
-  if (rm.id.vec)  {rw <- which(comb[,1] > comb[,2])} else {rw <- which(comb[,1] >= comb[,2])}
-  comb <- data.frame(comb[rw,c(2,1)])
-  # [lower.tri(matrix(1:dim.p^2,dim.p),TRUE),][,c(2,1)]
-  # comb <- data.frame(t(combn(1:dim.p,2)))
-  comb$pair <- apply(comb,1,function(x) paste(x,collapse="-"))
-
-  # empty.result <- ML.fun(xvec = rep(0,3), yvec = rep(0,3))
-  # comb <- cbind(comb, matrix(ncol = dim(empty.result)[2]))
-  # names(comb) <- c(1,2,"pair", names(empty.result))
-  names(comb) <- c(1,2,"pair")
+  comb <- expand.grid(1:dim.p, 1:dim.p)
+  rw <- which(comb[, 1] > comb[, 2])
+  comb <- data.frame(comb[rw, c(2,1)])
+  comb$pair <- apply(comb, 1, function(x) paste(x, collapse = "-"))
+  names(comb) <- c(1, 2, "pair")
+  
   MLE <- apply(comb[,1:2], 1, function(s) {
     # if (s[1] <= 6 | s[2] <=23) {return(data.frame(matrix(NA,1,4)))} # debug #7,24 has problem
-    x <- data[s[1],]
-    y <- data[s[2],]
-    tt(1)
-    print(c(Estimated.pair = s))
-
-    # result <- ML.fun(xvec = x, yvec = y, ...)
-    #result <- ifelse(class(result)=="try-error",rep(NA,length(ML.fun(xvec = 0, yvec = 0, ...))), result)   %>% print
-    result <- try(ML.fun(xvec = x, yvec = y, ...),silent=TRUE)
-    if (class(result)=="try-error") {
-      result <- rep(NA,length(ML.fun(xvec = 0, yvec = 0, ...)))
+    x <- data[s[1], ]
+    y <- data[s[2], ]
+    result <- ML.BvZINB5(xvec = x, yvec = y, ...)
+    
+    if (showFlag) cat("pair ", s[1], "-", s[2], ": ", "(rho, se.rho) = (", 
+                      formatC(result$rho[1,1], digits = 5, format = "f", flag = "0"), ", ", 
+                      formatC(result$rho[1,2], digits = 5, format = "f", flag = "0"), ")\n")
+    result2 <- c(rho = result$rho["rho", "Estimate"], 
+                 se.rho = result$rho["rho", "Std.err"],
+                 if (fullParam) result$coefficients[, "Estimate"],  
+                 if (fullParam) result$coefficients[, "Std.err"], 
+                 if (fullParam) c(result$lik, result$iter))
+    if (fullParam) {
+      names(result2) <- c("rho", "se.rho", abp.names, 
+                          paste0("se.", abp.names), "logLik", "num.iter")
     }
-    if (print.each.pair) {print(result); print(tt(2))}
-    return(result)
+    return(result2)
   })
-
-  if (class(MLE) == "list") {MLE <- do.call(rbind, MLE)}
-  else if (class(MLE) == "matrix") { MLE <- t(MLE)}
-  comb <- cbind(comb, MLE)
-
-  if (p.nonzero == TRUE) {
+  comb <- cbind(comb, t(MLE))
+  
+  if (nonzero.prop == TRUE) {
     n <- dim(data)[2]
-    comb$non0.1 <- sapply(1:dim(comb)[1], function(i) {sum(data[comb[i,1],] != 0) / n})
-    comb$non0.2 <- sapply(1:dim(comb)[1], function(i) {sum(data[comb[i,2],] != 0) / n})
-    comb$non0.min <- pmin(comb$non0.1,comb$non0.2)
+    comb$nonzero.1 <- sapply(1:dim(comb)[1], function(i) {sum(data[comb[i,1],] != 0) / n})
+    comb$nonzero.2 <- sapply(1:dim(comb)[1], function(i) {sum(data[comb[i,2],] != 0) / n})
+    comb$nonzero.min <- pmin(comb$nonzero.1, comb$nonzero.2)
   }
-
+  
   return(comb)
 }
-if (FALSE) { # example
-  head(pairwise.MLE(data=data[iset.Mm.c2[[1]],], ML.fun = ML.BvNB1))
-}
+
 
 nonzero <- function(x, cut = .1) {
   len = length(x); above = names(which(x > cut)); len.a = length(above)
@@ -144,4 +82,8 @@ bin.profile <- function(xvec, yvec) {
   a[3] <- sum(yvec) - a[1]       # 0,1
   a[4] <- length(xvec) - sum(a)  # 0,0
   return(a)
+}
+
+.check.input <- function(xvec, yvec) {
+  
 }
