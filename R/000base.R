@@ -85,6 +85,7 @@ bin.profile <- function(xvec, yvec) {
 }
 
 .check.input <- function(xvec, yvec) {
+  if(!all(is.finite(xvec)) | !all(is.finite(yvec))) {stop("xvec, yvec should not have missings.")}
   if(any(xvec < 0) | any(yvec < 0)) {stop("xvec, yvec should be > 0.")}
   if(!length(xvec) == length(yvec)){stop("The length of xvec and yvec should be the same.")}
 }

@@ -1,5 +1,6 @@
-### 1. Density, likelihood, gradient :  This function affects BvZINB3, BvZINB4
-dBvNB3 <- function(x, y, a0, a1, a2, b1, b2, log=FALSE) {
+### 1. Density, likelihood, gradient :  This function affects bzinb3, bzinb4
+dbnb <- function(x, y, a0, a1, a2, b1, b2, log=FALSE) {
+  .check.initials()
   p1 = (b1 + b2 + 1) /(b1 + 1); p2 = (b1 + b2 + 1) /(b2 + 1)
   adj = 0
   l1 <- function(k, m) exp(lgamma(a1 + k) - lgamma(k+1) - lgamma(a1) + lgamma(x + y + a0 -m -k) - lgamma(x -k +1) - lgamma(a0 + y - m) + k *log(p1))
@@ -12,16 +13,18 @@ dBvNB3 <- function(x, y, a0, a1, a2, b1, b2, log=FALSE) {
   return(ifelse(log, l4, exp(l4)))
 }
 if (FALSE) {
-  dBvNB3(1,1,1,1,1,1,2) ; dBvNB3(1,1,1,1,1,1,1); dBvNB2(1,1,1,1,1,1)
-  tmp <- sapply(0:50, function(r) sapply(0:50, function(s) dBvNB3(s,r,1,1,1,1,.5)))
+  dbnb(1,1,1,1,1,1,2) ; dbnb(1,1,1,1,1,1,1); dbnb(1,1,1,1,1,1)
+  tmp <- sapply(0:50, function(r) sapply(0:50, function(s) dbnb(s,r,1,1,1,1,.5)))
   sum(tmp) #1
 }
-dBvNB3.vec <- Vectorize(dBvNB3)
-lik.BvNB3 <- function(x, y, param) {
-  sum(log(dBvNB3.vec(x, y, param[1], param[2], param[3], param[4], param[5])))
+dbnb.vec <- Vectorize(dbnb)
+lik.bnb <- function(x, y, param) {
+  sum(log(dbnb.vec(x, y, param[1], param[2], param[3], param[4], param[5])))
 }
 
-dBvNB3.gr <- function(x, y, a0, a1, a2, b1, b2) {
+dbnb.gr <- function(x, y, a0, a1, a2, b1, b2) {
+  .check.initials()
+  
   p1 = (b1 + b2 + 1) /(b1 + 1); p2 = (b1 + b2 + 1) /(b2 + 1)
   gr.b1.1 <- x/b1 - (x + y + a0) /(b1 + b2 + 1) - a1 / (b1 + 1)
   gr.b1 <- function(k, m) {(k + m) / (b1 + b2 + 1) - k / (b1 + 1) + gr.b1.1}
@@ -65,16 +68,17 @@ dBvNB3.gr <- function(x, y, a0, a1, a2, b1, b2) {
   result <- list(logdensity=log(l1.sum), gradient = c(gr.a0.sum, gr.a1.sum, gr.a2.sum, gr.b1.sum, gr.b2.sum))
   return(result)
 }
-dBvNB3.gr.vec <- Vectorize(dBvNB3.gr)
+dbnb.gr.vec <- Vectorize(dbnb.gr)
 
 if (FALSE) {
-  tmp <- dBvNB3.gr.vec(c(1,1,1),c(0,1,2),1,1,1,1,2)[2,]
+  tmp <- dbnb.gr.vec(c(1,1,1),c(0,1,2),1,1,1,1,2)[2,]
   sapply(tmp, cbind)
 }
 
 
 ### 2. MLE
-ML.BvNB3 <- function (xvec, yvec, abstol=1e-8, method="BFGS", showFlag=FALSE) {
+bnb <- function (xvec, yvec, abstol=1e-8, method="BFGS", showFlag=FALSE) {
+  .check.input()
   xy.reduced <- as.data.frame(table(xvec,yvec))
   names(xy.reduced) <- c("x", "y","freq")
   xy.reduced <- xy.reduced[xy.reduced$freq != 0,]
@@ -85,12 +89,12 @@ ML.BvNB3 <- function (xvec, yvec, abstol=1e-8, method="BFGS", showFlag=FALSE) {
   #print(xy.reduced)
 
   fn.1 = function (param) {
-    val <- dBvNB3.gr.vec( x = xy.reduced$x, y = xy.reduced$y,  a0 = param[1], a1 = param[2], a2 = param[3], b1 = param[4], b2 = param[5])
+    val <- dbnb.gr.vec( x = xy.reduced$x, y = xy.reduced$y,  a0 = param[1], a1 = param[2], a2 = param[3], b1 = param[4], b2 = param[5])
     lik <- sapply(val[1,],cbind) %*% xy.reduced$freq
     return(lik)
   }
   gr.1 = function (param) {
-    val <- dBvNB3.gr.vec( x = xy.reduced$x, y = xy.reduced$y,  a0 = param[1], a1 = param[2], a2 = param[3], b1 = param[4], b2 = param[5])
+    val <- dbnb.gr.vec( x = xy.reduced$x, y = xy.reduced$y,  a0 = param[1], a1 = param[2], a2 = param[3], b1 = param[4], b2 = param[5])
     lik <- sapply(val[1,],cbind) %*% xy.reduced$freq
     gr <- sapply(val[2,],cbind) %*% xy.reduced$freq
     # print(c(param,gr)) ###
@@ -130,84 +134,86 @@ ML.BvNB3 <- function (xvec, yvec, abstol=1e-8, method="BFGS", showFlag=FALSE) {
 }
 # simple tests
 if (FALSE) {
-  ML.BvNB3(c(10,1,1),c(10,1,2)); ML.BvNB2(c(10,1,1),c(10,1,2))
+  bnb(c(10,1,1),c(10,1,2)); bnb(c(10,1,1),c(10,1,2))
   tt(1)
-  a <- ML.BvNB3(extractor(1), extractor(38), abstol=1e-15)
+  a <- bnb(extractor(1), extractor(38), abstol=1e-15)
   tt(2) # 31secs
   
-  ML.BvNB3(extractor(2), extractor(5), method="BFGS", abstol=1e-30)
-  ML.BvNB3(extractor(2), extractor(5), method="Nelder-Mead", abstol=1e-30)
-  sum(sapply(dBvNB3.gr.vec(extractor(2), extractor(5), 0.0004670043, 0.002597285, 0.01597736, 10.48014, 35.76876)[1,],cbind))
-  sum(sapply(dBvNB3.gr.vec(extractor(2), extractor(5), 0.0004686926, 0.002604057, 0.01598007, 10.45238, 35.75869)[1,],cbind))
+  bnb(extractor(2), extractor(5), method="BFGS", abstol=1e-30)
+  bnb(extractor(2), extractor(5), method="Nelder-Mead", abstol=1e-30)
+  sum(sapply(dbnb.gr.vec(extractor(2), extractor(5), 0.0004670043, 0.002597285, 0.01597736, 10.48014, 35.76876)[1,],cbind))
+  sum(sapply(dbnb.gr.vec(extractor(2), extractor(5), 0.0004686926, 0.002604057, 0.01598007, 10.45238, 35.75869)[1,],cbind))
   
   tt(1)
-  ML.BvNB3(extractor(1), extractor(3), method="BFGS")
+  bnb(extractor(1), extractor(3), method="BFGS")
   tt(2) #8sec
   tt(1)
-  ML.BvNB3(extractor(1), extractor(38), method="BFGS", showFlag=TRUE)
-  ML.BvNB3(extractor(1), extractor(38), method="Nelder-Mead", showFlag=TRUE)
+  bnb(extractor(1), extractor(38), method="BFGS", showFlag=TRUE)
+  bnb(extractor(1), extractor(38), method="Nelder-Mead", showFlag=TRUE)
   tt(2) #31sec
-  #lik.BvNB3(extractor(1), extractor(38), c(5.790158e-03, 4.300688e-03, 7.836757e-02, 7.586956e+01, 1.015767e+02))
-  #lik.BvNB3(extractor(1), extractor(38), c())
+  #lik.bnb(extractor(1), extractor(38), c(5.790158e-03, 4.300688e-03, 7.836757e-02, 7.586956e+01, 1.015767e+02))
+  #lik.bnb(extractor(1), extractor(38), c())
   
 }
 # some deviance tests
 if (FALSE) {
   tt(1)
-  a <- ML.BvNB3(extractor(11), extractor(16))
+  a <- bnb(extractor(11), extractor(16))
   tt(2) #1.8 sec!
-  lik.BvNB3(extractor(11), extractor(16),a) #lik = -805
+  lik.bnb(extractor(11), extractor(16),a) #lik = -805
   
   tt(1)
-  a <- ML.BvNB3(extractor(11), extractor(16))
+  a <- bnb(extractor(11), extractor(16))
   tt(2) #1.9 sec!
-  lik.BvNB3(extractor(11), extractor(16),a) #lik = -805
+  lik.bnb(extractor(11), extractor(16),a) #lik = -805
   
   tt(1)
-  a <- ML.BvNB3(extractor(30), extractor(50))
+  a <- bnb(extractor(30), extractor(50))
   tt(2) #0.2 sec!
-  lik.BvNB3(extractor(30), extractor(50),a) #lik = -113
+  lik.bnb(extractor(30), extractor(50),a) #lik = -113
   
   tt(1)
-  a <- ML.BvNB3(extractor(8), extractor(11))
+  a <- bnb(extractor(8), extractor(11))
   tt(2) #17 sec!
-  lik.BvNB3(extractor(8), extractor(11),a) #lik = -1938
+  lik.bnb(extractor(8), extractor(11),a) #lik = -1938
   
   tt(1)
-  a <- ML.BvNB3(extractor(1), extractor(3))
+  a <- bnb(extractor(1), extractor(3))
   tt(2) #17 sec!
-  lik.BvNB3(extractor(1), extractor(3),a) #lik = -1458
+  lik.bnb(extractor(1), extractor(3),a) #lik = -1458
   
 }
 
 if (FALSE) {
   tt(1)
-  a <- pairwise.MLE(data=data[iset.Mm.c2[[1]],], ML.fun = ML.BvNB3, showFlag=TRUE)
+  a <- pairwise.MLE(data=data[iset.Mm.c2[[1]],], ML.fun = bnb, showFlag=TRUE)
   tt(2)
-  ML.BvNB3(extractor(1), extractor(12), showFlag=TRUE)
-  ML.BvNB3(extractor(51), extractor(12), showFlag=TRUE)
+  bnb(extractor(1), extractor(12), showFlag=TRUE)
+  bnb(extractor(51), extractor(12), showFlag=TRUE)
   
   tt(1)
-  MLE.Geneset1$BvNB3 <- pairwise.MLE(data[iset.Mm.c2[[1]],], ML.fun = ML.BvNB3, showFlag=TRUE)  ## 1.8hrs
+  MLE.Geneset1$bnb <- pairwise.MLE(data[iset.Mm.c2[[1]],], ML.fun = bnb, showFlag=TRUE)  ## 1.8hrs
   tt(2)
   
-  ML.BvNB2(0,155)
+  bnb(0,155)
   
 }
 
 
 
 ### 3. Deviance
-dev.BvNB3 <- function(xvec, yvec, param = NULL, a0 = NULL, a1 = NULL, a2= NULL, b1 = NULL, b2 = NULL) {
-  # If params = NULL, apply ML.BvNB3. if else, apply those params
+dev.bnb <- function(xvec, yvec, param = NULL, a0 = NULL, a1 = NULL, a2= NULL, b1 = NULL, b2 = NULL) {
+  .check.input()
+  
+  # If params = NULL, apply bnb. if else, apply those params
   if (is.null (param)) { 
     if (is.null (a0) | is.null (a1) | is.null (a2) | is.null (b1) | is.null (b2)) {
-      param = ML.BvNB3 (xvec = xvec, yvec = yvec)
+      param = bnb (xvec = xvec, yvec = yvec)
     }
     else { param = c(a0, a1, a2, b1, b2)}
   }
-  # Log-likelihood of the BvNB2 model
-  lik.model <- lik.BvNB3 (x = xvec, y = yvec, param = param)
+  # Log-likelihood of the bnb model
+  lik.model <- lik.bnb (x = xvec, y = yvec, param = param)
   
   # Reduced calculation
   xy.reduced <- as.data.frame(table(xvec,yvec))
@@ -217,47 +223,47 @@ dev.BvNB3 <- function(xvec, yvec, param = NULL, a0 = NULL, a1 = NULL, a2= NULL, 
   xy.reduced$y <- as.numeric(as.character(xy.reduced$y))
   xy.reduced$freq <- as.numeric(as.character(xy.reduced$freq))
   
-  # Saturated model BZIP params
-  ML.BvNB3.vec <- Vectorize(ML.BvNB3)
-  param.sat <- t(ML.BvNB3.vec(xy.reduced$x, xy.reduced$y)) # %>%print
+  # Saturated model bzip params
+  bnb.vec <- Vectorize(bnb)
+  param.sat <- t(bnb.vec(xy.reduced$x, xy.reduced$y)) # %>%print
   param.sat <- do.call(rbind, param.sat)  #"matrix of lists" into "a matrix"
-  lik.sat   <- sum(dBvNB3.vec(x= xy.reduced$x, y = xy.reduced$y, a0 = param.sat[,1], a1 = param.sat[,2], a2 = param.sat[,3], b1 = param.sat[,4], b2 = param.sat[,5],  log = TRUE) * xy.reduced$freq)
+  lik.sat   <- sum(dbnb.vec(x= xy.reduced$x, y = xy.reduced$y, a0 = param.sat[,1], a1 = param.sat[,2], a2 = param.sat[,3], b1 = param.sat[,4], b2 = param.sat[,5],  log = TRUE) * xy.reduced$freq)
   
   return(data.frame(model.likelihood = lik.model, satrtd.likelihood = lik.sat, deviance = 2*(lik.sat - lik.model)))
 }
 if (FALSE) {
-  dev.BvNB3(extractor(1), extractor(2), param=as.vector(a[,2]))  #455  vs BZIP.B:3150
-  dev.BvNB3(extractor(1), extractor(5), param=as.vector(a[,5]))  #849  vs BZIP.B:2877
-  dev.BvNB3(extractor(1), extractor(3))  #2028 vs BvNB2: 2030
-  dev.BvNB3(extractor(1), extractor(8))  #2066 vs BvNB2: 2077
+  dev.bnb(extractor(1), extractor(2), param=as.vector(a[,2]))  #455  vs bzip.B:3150
+  dev.bnb(extractor(1), extractor(5), param=as.vector(a[,5]))  #849  vs bzip.B:2877
+  dev.bnb(extractor(1), extractor(3))  #2028 vs bnb: 2030
+  dev.bnb(extractor(1), extractor(8))  #2066 vs bnb: 2077
   
   ## heatmap
-  a <- ML.BvNB3(extractor(1), extractor(3), method="BFGS")
-  tmp <- sapply(0:50, function(r) sapply(0:50, function(s) dBvNB3(s,r, a[1,1],a[1,2],a[1,3],a[1,4],a[1,5])))
+  a <- bnb(extractor(1), extractor(3), method="BFGS")
+  tmp <- sapply(0:50, function(r) sapply(0:50, function(s) dbnb(s,r, a[1,1],a[1,2],a[1,3],a[1,4],a[1,5])))
   plot_ly(z = tmp[1:2,2:10], type = "heatmap")
   table(extractor(1), extractor(3))
   
-  MLE.Geneset1$BvNB3 ########
-  a <- cbind(1,2,dev.BvNB2(extractor(1), extractor(2), param = c(1,1,1,1,1,1,1)))
+  MLE.Geneset1$bnb ########
+  a <- cbind(1,2,dev.bnb(extractor(1), extractor(2), param = c(1,1,1,1,1,1,1)))
   tt(1)
-  for (i in 1:dim(MLE.Geneset1$BvNB2)[1]) {
+  for (i in 1:dim(MLE.Geneset1$bnb)[1]) {
     #if (i ==300 | i == 349 ) {a[i,] <- c(a1, a2, NA,NA,NA)}
     #if (i >= 350) {
-    tmp <- MLE.Geneset1$BvNB2[i,]
+    tmp <- MLE.Geneset1$bnb[i,]
     a1 <- tmp[1]; a2 <- tmp[2]
     a3 <- tmp[4:7] #params
-    a[i,] <- c(a1,a2,dev.BvNB2(extractor(as.numeric(a1),1), extractor(as.numeric(a2),1), param = a3))
+    a[i,] <- c(a1,a2,dev.bnb(extractor(as.numeric(a1),1), extractor(as.numeric(a2),1), param = a3))
     print(a[i,])  
   }
   tt(2) # 5.8 hours
   
-  MLE.Geneset1$BvNB2$dev <- a$deviance
+  MLE.Geneset1$bnb$dev <- a$deviance
   
-  sum(MLE.Geneset1$BvNB2$dev>863); sum(MLE.Geneset1$BvNB2$dev<863)
-  plot3.2.1 <-  ggplot(MLE.Geneset1$BvNB2, aes(non0.min, dev)) +
-    geom_point(aes(color=1-non0.min)) + ggtitle(paste0("deviance of BvNB2 model - Geneset 1")) +
+  sum(MLE.Geneset1$bnb$dev>863); sum(MLE.Geneset1$bnb$dev<863)
+  plot3.2.1 <-  ggplot(MLE.Geneset1$bnb, aes(non0.min, dev)) +
+    geom_point(aes(color=1-non0.min)) + ggtitle(paste0("deviance of bnb model - Geneset 1")) +
     ylim(c(0,25000)) +
-    xlab("nonzero-count proprotion(min)") + ylab("Deviance of BvNB2") + geom_abline(intercept=863, slope=0, linetype, color="red", size=0.1)
+    xlab("nonzero-count proprotion(min)") + ylab("Deviance of bnb") + geom_abline(intercept=863, slope=0, linetype, color="red", size=0.1)
   png2(plot3.2.1, width = 720, height = 360)
 }
 

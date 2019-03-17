@@ -1,22 +1,20 @@
 #' @import Rcpp BH
 
-# BvZINB4: BvZINB3 + varying zero inflation parameters
-# library(rootSolve)
 
-dBvZINB5 <- function(x, y, a0, a1, a2, b1, b2, p1, p2, p3, p4, log=FALSE) {
-  dxy <- dBvNB3(x=x, y=y, a0=a0, a1=a1, a2=a2, b1=b1, b2=b2, log=FALSE)
+dbzinb <- function(x, y, a0, a1, a2, b1, b2, p1, p2, p3, p4, log=FALSE) {
+  dxy <- dbnb(x=x, y=y, a0=a0, a1=a1, a2=a2, b1=b1, b2=b2, log=FALSE)
   dx <- dnbinom(x=x, a0+a1, 1/(1+b1))
   dy <- dnbinom(x=y, a0+a2, 1/(1+b2))
   result <- dxy * p1 + dx * ifelse(y==0,p2,0) + dy * ifelse(x==0,p3,0) + ifelse(x+y==0,p4,0)
   return(ifelse(log, log(result), result))
 }
-dBvZINB5.vec <- Vectorize(dBvZINB5)
+dbzinb.vec <- Vectorize(dbzinb)
 
-lik.BvZINB5 <- function(x, y, param) sum(log(do.call(dBvZINB5.vec, c(list(x, y), as.list(param)))))
+lik.bzinb <- function(x, y, param) sum(log(do.call(dbzinb.vec, c(list(x, y), as.list(param)))))
 
 #' @useDynLib bzinb
 #' @export
-rBvZINB5 <- function(n, a0, a1, a2, b1, b2, p1, p2, p3, p4, param=NULL) {
+rbzinb <- function(n, a0, a1, a2, b1, b2, p1, p2, p3, p4, param=NULL) {
   if (!is.null(param)) {a0 = param[1]; a1 = param[2]; a2 = param[3]; b1 = param[4]; b2 = param[5]
                         p1 = param[6]; p2 = param[7]; p3 = param[8]; p4 = param[9]
   }
@@ -41,45 +39,48 @@ rBvZINB5 <- function(n, a0, a1, a2, b1, b2, p1, p2, p3, p4, param=NULL) {
 trueCor <- function(a0, a1, a2, b1, b2) a0 * sqrt(b1 * b2 /(b1+1) /(b2+1) /(a0 + a1) /(a0 + a2))
 
 if (FALSE) {
-  dBvZINB5(1,1,1,1,1,1,.5,.25,.25,.25,.25)
-  tmp <- sapply(0:50, function(r) sapply (0:50, function(s) dBvZINB5(s,r,1,1,1,1,.5,.25,.25,.25,.25)))
+  dbzinb(1,1,1,1,1,1,.5,.25,.25,.25,.25)
+  tmp <- sapply(0:50, function(r) sapply (0:50, function(s) dbzinb(s,r,1,1,1,1,.5,.25,.25,.25,.25)))
   sum(tmp)
 }
 
-### 2.EM
-# `dBvZINB5.Expt()` written in R was replaced by `dBvZINB5.Expt.cpp()`
+### 2.em
 
 #' @useDynLib bzinb
 #' @export
-dBvZINB5.Expt.vec <- function(xvec, yvec, freq, n = length(freq), a0, a1, a2, b1, b2, p1, p2, p3, p4) {
+dbzinb.expt.vec <- function(xvec, yvec, freq, n = length(freq), a0, a1, a2, b1, b2, p1, p2, p3, p4) {
+  .check.input()
+  
   result <- rep(0, 12)
-  dBvZINB_Expt_vec(xvec, yvec, freq, n, a0, a1, a2, b1, b2, p1, p2, p3, p4, result)
+  dbzinb_expt_vec(xvec, yvec, freq, n, a0, a1, a2, b1, b2, p1, p2, p3, p4, result)
   names(result) <- c("logdensity", paste0("R", 0:2, ".E"), paste0("log.R", 0:2, ".E"), paste0("E",1:4,".E"), "v.E")
   result
 }
 
-# step-by-step Expt calculation for information matrix
-dBvZINB5.Expt.se <- function(x, y, a0, a1, a2, b1, b2, p1, p2, p3, p4) {
+# step-by-step expt calculation for information matrix
+dbzinb.expt.se <- function(x, y, a0, a1, a2, b1, b2, p1, p2, p3, p4) {
   result <- rep(0, 12)
-  dBvZINB_Expt(x, y, freq = 1, a0, a1, a2, b1, b2, p1, p2, p3, p4, result)
+  dbzinb_expt(x, y, freq = 1, a0, a1, a2, b1, b2, p1, p2, p3, p4, result)
   names(result) <- c("logdensity", paste0("R", 0:2, ".E"), paste0("log.R", 0:2, ".E"), paste0("E",1:4,".E"), "v.E")
   result
 }
-dBvZINB5.Expt.se.mat <- Vectorize(dBvZINB5.Expt.se)
+dbzinb.expt.se.mat <- Vectorize(dbzinb.expt.se)
 
-dBvZINB5.Expt.mat <- function(xvec, yvec, freq, n = sum(freq), a0, a1, a2, b1, b2, p1, p2, p3, p4) {
+dbzinb.expt.mat <- function(xvec, yvec, freq, n = sum(freq), a0, a1, a2, b1, b2, p1, p2, p3, p4) {
+  .check.input()
+  
   result <- rep(0, 12)
-  dBvZINB_Expt_vec(xvec, yvec, freq, n, a0, a1, a2, b1, b2, p1, p2, p3, p4, result)
+  dbzinb_expt_vec(xvec, yvec, freq, n, a0, a1, a2, b1, b2, p1, p2, p3, p4, result)
   names(result) <- c("logdensity", paste0("R", 0:2, ".E"), paste0("log.R", 0:2, ".E"), paste0("E",1:4,".E"), "v.E")
   result
 }
 
 if (FALSE) {
-  tmp <- dBvZINB5.Expt.vec(c(1,1,1),c(0,1,2),1,1,1,1,2,.25,.25,.25,.25)
-  tmp <- dBvZINB5.Expt.vec(c(0,1,1),c(0,1,2),1,1,1,1,2,.25,.25,.25,.25)
-  tmp <- dBvZINB5.Expt.vec(extractor(1),extractor(2),1,1,1,1,2,.25,.25,.25,.25)
+  tmp <- dbzinb.expt.vec(c(1,1,1),c(0,1,2),1,1,1,1,2,.25,.25,.25,.25)
+  tmp <- dbzinb.expt.vec(c(0,1,1),c(0,1,2),1,1,1,1,2,.25,.25,.25,.25)
+  tmp <- dbzinb.expt.vec(extractor(1),extractor(2),1,1,1,1,2,.25,.25,.25,.25)
   t(tmp)[21:40,]
-  dBvZINB5.Expt.vec(c(10,1,2),c(10,1,1), 1.193013282, 0.003336139, 0.002745513, 3.618842924, 3.341625901, .25,.25,.25,.25)
+  dbzinb.expt.vec(c(10,1,2),c(10,1,1), 1.193013282, 0.003336139, 0.002745513, 3.618842924, 3.341625901, .25,.25,.25,.25)
 }
 
 abp.names <- c("a0", "a1", "a2", "b1", "b2", "p1", "p2", "p3", "p4") # global variable
@@ -87,8 +88,9 @@ expt.names <- c("lik", "ER0", "ER1", "ER2", "ElogR0", "ElogR1", "ElogR2", "EE1",
 # EM with booster
 # maxiter control added, output =param + lik + #iter
 # Mar 15, 2018: Print pureCor instead of cor
-ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=50000, showFlag=FALSE,
+bzinb.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=50000, showFlag=FALSE,
                              debug = FALSE, SE = TRUE, vcov = FALSE) {
+  .check.input()
   if (!SE & vcov) {warning("To get covariance matrix (vcov), SE should be TRUE. The covariance matrix will not be obtained.")}
   require(rootSolve)
   if (debug) {showFlag=TRUE}
@@ -114,10 +116,10 @@ ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=500
 # # print(c("freq", xy.reduced$freq))
 # # print(c("param", param))
 # # print(as.list(param))
-#       # se <- BZINB5.se(xvec = xy.reduced$x, yvec = xy.reduced$y, freq = xy.reduced$freq, 
+#       # se <- bzinb.se(xvec = xy.reduced$x, yvec = xy.reduced$y, freq = xy.reduced$freq, 
 #       #                 a0 = param[1], a1 = param[2], a2 = param[3], b1 = param[4],  b2 = param[5], 
 #       #                 p1 = param[6], p2 = param[7], p3 = param[8], p4 = param[9])
-#       se <- do.call(BZINB5.se, c(list(xy.reduced$x, xy.reduced$y, freq = xy.reduced$freq), as.list(param)))
+#       se <- do.call(bzinb.se, c(list(xy.reduced$x, xy.reduced$y, freq = xy.reduced$freq), as.list(param)))
 #       names(se) <- paste0("se.", c(abp.names, "rho", "logit.rho"))
 #       se
 #   }
@@ -222,7 +224,9 @@ ML.BvZINB5.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=500
 }
 #' @useDynLib bzinb
 #' @export
-ML.BvZINB5 <- function(xvec, yvec, ...) {
+bzinb <- function(xvec, yvec, ...) {
+  .check.input()
+  
   # if (!is.integer(xvec) | !is.integer(yvec)) stop("xvec and yvec should be integers.")
   # nonnegative
   # len(xvec) == len(yvec)
@@ -230,7 +234,7 @@ ML.BvZINB5 <- function(xvec, yvec, ...) {
   xvec = as.integer(round(xvec, digits = 0))
   yvec = as.integer(round(yvec, digits = 0))
   call <- match.call()
-  result <- try(ML.BvZINB5.base(xvec,yvec, ...))
+  result <- try(bzinb.base(xvec,yvec, ...))
   if (class(result)=="try-error") {
     result <- list(rho = matrix(rep(NA, 4),
                                 ncol = 2, dimnames = list(c("rho", "logit.rho"), c("Estimate", "Std.err"))),
@@ -250,26 +254,26 @@ if (FALSE) {
   # param for pair 1 and 2
   param <- c(1,1,1,1,1,  9.486775e-01,  1.893068e-02,  1.847954e-02,  1.391224e-02)
   set.seed(1)
-  tmp <- rBvZINB5 (800, param=param)
+  tmp <- rbzinb (800, param=param)
   table(tmp[,1], tmp[,2])
 
   microbenchmark::microbenchmark(
-    ML.BvZINB5(tmp[,1], tmp[,2], maxiter=1000, SE = FALSE), 
-    ML.BvZINB5.old(tmp[,1], tmp[,2], maxiter=1000, SE = FALSE),
+    bzinb(tmp[,1], tmp[,2], maxiter=1000, SE = FALSE), 
+    bzinb.old(tmp[,1], tmp[,2], maxiter=1000, SE = FALSE),
     time = 5)
-  ML.BvZINB5(tmp[,1], tmp[,2], maxiter=100)
+  bzinb(tmp[,1], tmp[,2], maxiter=100)
   
-  ML.BvZINB5(tmp[,1], tmp[,2], maxiter=20000, showFlag=F, SE = TRUE, initial = initialize(tmp[,1], tmp[,2]))
+  bzinb(tmp[,1], tmp[,2], maxiter=20000, showFlag=F, SE = TRUE, initial = initialize(tmp[,1], tmp[,2]))
   
   library(devtools); load_all()
   set.seed(11)
-  tmp <- rBvZINB5 (800, param=param)
-  # ML.BvZINB5.old(tmp[,1], tmp[,2], maxiter=10, showFlag=T)
-  # ML.BvZINB5(tmp[,1], tmp[,2], maxiter=10, showFlag=T)
+  tmp <- rbzinb (800, param=param)
+  # bzinb.old(tmp[,1], tmp[,2], maxiter=10, showFlag=T)
+  # bzinb(tmp[,1], tmp[,2], maxiter=10, showFlag=T)
   # iter = 2059, likelihood = -2987.08
-  ML.BvZINB5(tmp[,1], tmp[,2], maxiter=2, showFlag=F, initial = c(a0 = 0.865977, a1 = 1.00028, a2 = 1.11896, b1 = 1.11955, b2 = 1.01823, p1 = 0.962907, p2 = 0.00529951, p3 = 1.62319e-27, p4 = 0.0317939))
+  bzinb(tmp[,1], tmp[,2], maxiter=2, showFlag=F, initial = c(a0 = 0.865977, a1 = 1.00028, a2 = 1.11896, b1 = 1.11955, b2 = 1.01823, p1 = 0.962907, p2 = 0.00529951, p3 = 1.62319e-27, p4 = 0.0317939))
   
-  maxiter = 60000; a1 <- Sys.time();( b1 <- ML.BvZINB5.old(tmp[,1], tmp[,2], maxiter=maxiter, showFlag=F)); a2 <- Sys.time(); cat("New method\n"); (b2 <- ML.BvZINB5(tmp[,1], tmp[,2], maxiter=maxiter, showFlag=F)); a3 <- Sys.time();  a2-a1; a3-a2; cat("diff(lik) = ", b2[10] - b1[10], ", iters (old, new) ", b2[11], b1[11])
+  maxiter = 60000; a1 <- Sys.time();( b1 <- bzinb.old(tmp[,1], tmp[,2], maxiter=maxiter, showFlag=F)); a2 <- Sys.time(); cat("New method\n"); (b2 <- bzinb(tmp[,1], tmp[,2], maxiter=maxiter, showFlag=F)); a3 <- Sys.time();  a2-a1; a3-a2; cat("diff(lik) = ", b2[10] - b1[10], ", iters (old, new) ", b2[11], b1[11])
 }
 
 #' @useDynLib bzinb
@@ -290,7 +294,8 @@ opt <- function(b1, expt, a) {
 
 #' @useDynLib bzinb
 #' @export
-BZINB5.se <- function(xvec, yvec, param = NULL, ...) {
+bzinb.se <- function(xvec, yvec, param = NULL, ...) {
+  .check.input()
   if (any(!is.finite(param))) {return(rep(NA, 10))}
   xy.reduced <- as.data.frame(table(xvec,yvec))
   names(xy.reduced) <- c("x", "y","freq")
@@ -303,7 +308,7 @@ BZINB5.se <- function(xvec, yvec, param = NULL, ...) {
   
   if (is.null(param)) {
     warning("param was not provided. It will be estimated.")
-    est <- ML.BvZINB5(xvec, yvec, ...)
+    est <- bzinb(xvec, yvec, ...)
     param <- unlist(est$coefficients[,1])
     iter <- est$iter
   } else {
@@ -327,7 +332,7 @@ BZINB5.se <- function(xvec, yvec, param = NULL, ...) {
   expt = setNames(as.double(rep(0, 12)), expt.names)
   s_i = setNames(as.double(rep(0, 8)), abp.names[-9])
   info <- matrix(0, ncol = 8, nrow = 8, dimnames = list(abp.names[-9], abp.names[-9]))
-  dBvZINB_Expt_vec (xvec = xy.reduced$x, yvec = xy.reduced$y, freq = xy.reduced$freq, n = n.reduced, 
+  dbzinb_expt_vec (xvec = xy.reduced$x, yvec = xy.reduced$y, freq = xy.reduced$freq, n = n.reduced, 
                     a0 = param[1], a1 = param[2], a2 = param[3], b1 = param[4], b2 = param[5], 
                     p1 = param[6], p2 = param[7], p3 = param[8], p4 = param[9], 
                     expt = expt, s_i = s_i, info = info, se = 1)
