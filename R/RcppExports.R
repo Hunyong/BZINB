@@ -2,17 +2,15 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 em <- function(param, xvec, yvec, freq, n, expt, info, se, iter, maxiter, tol, showFlag) {
-    .check.input()  
     invisible(.Call('_bzinb_em', PACKAGE = 'bzinb', param, xvec, yvec, freq, n, expt, info, se, iter, maxiter, tol, showFlag))
 }
 
-dbzinb_Expt <- function(x, y, freq, a0, a1, a2, b1, b2, p1, p2, p3, p4, expt, s_i, info, se) {
-    invisible(.Call('_bzinb_dbzinb_Expt', PACKAGE = 'bzinb', x, y, freq, a0, a1, a2, b1, b2, p1, p2, p3, p4, expt, s_i, info, se))
+dBvZINB_Expt <- function(x, y, freq, a0, a1, a2, b1, b2, p1, p2, p3, p4, expt, s_i, info, se) {
+    invisible(.Call('_bzinb_dBvZINB_Expt', PACKAGE = 'bzinb', x, y, freq, a0, a1, a2, b1, b2, p1, p2, p3, p4, expt, s_i, info, se))
 }
 
-dbzinb_Expt_vec <- function(xvec, yvec, freq, n, a0, a1, a2, b1, b2, p1, p2, p3, p4, expt, s_i, info, se) {
-    .check.input()  
-    invisible(.Call('_bzinb_dbzinb_Expt_vec', PACKAGE = 'bzinb', xvec, yvec, freq, n, a0, a1, a2, b1, b2, p1, p2, p3, p4, expt, s_i, info, se))
+dBvZINB_Expt_vec <- function(xvec, yvec, freq, n, a0, a1, a2, b1, b2, p1, p2, p3, p4, expt, s_i, info, se) {
+    invisible(.Call('_bzinb_dBvZINB_Expt_vec', PACKAGE = 'bzinb', xvec, yvec, freq, n, a0, a1, a2, b1, b2, p1, p2, p3, p4, expt, s_i, info, se))
 }
 
 inv_digamma <- function(x, y) {

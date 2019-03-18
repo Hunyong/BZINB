@@ -1,6 +1,5 @@
 ### 1. Density, likelihood, gradient :  This function affects bzinb3, bzinb4
 dbnb <- function(x, y, a0, a1, a2, b1, b2, log=FALSE) {
-  .check.initials()
   p1 = (b1 + b2 + 1) /(b1 + 1); p2 = (b1 + b2 + 1) /(b2 + 1)
   adj = 0
   l1 <- function(k, m) exp(lgamma(a1 + k) - lgamma(k+1) - lgamma(a1) + lgamma(x + y + a0 -m -k) - lgamma(x -k +1) - lgamma(a0 + y - m) + k *log(p1))
@@ -18,13 +17,37 @@ if (FALSE) {
   sum(tmp) #1
 }
 dbnb.vec <- Vectorize(dbnb)
-lik.bnb <- function(x, y, param) {
-  sum(log(dbnb.vec(x, y, param[1], param[2], param[3], param[4], param[5])))
+lik.bnb <- function(xvec, yvec, a0, a1, a2, b1, b2, param = NULL) {
+  if (!is.null(param)) {
+    if (length(param) != 5) stop("length(param) must be 5.")
+    a0 = param[1]; a1 = param[2]; a2 = param[3]; b1 = param[4]; b2 = param[5]
+  }
+  sum(log(dbnb.vec(xvec, yvec, a0, a1, a2, b1, b2)))
+}
+
+#' @export
+#' @rdname bzinb
+rbzinb <- function(n, a0, a1, a2, b1, b2, param = NULL) {
+  if (!is.null(param)) {
+    if (length(param) != 5) stop("length(param) must be 5.")
+    a0 = param[1]; a1 = param[2]; a2 = param[3]; b1 = param[4]; b2 = param[5]
+  }
+  if (length(n) != 1) {stop("length(n) must be 1.")}
+  .check.ab(c(a0, a1, a2, b1, b2))
+  
+  rmat <- matrix(rgamma(n*3, shape = c(a0, a1, a2), rate = 1/b1), n, 3, byrow=TRUE)
+  rmat2 <- rmat
+  rmat2[,3] <- rmat[,1] + rmat[,3]
+  rmat2[,2] <- rmat[,1] + rmat[,2]
+  rmat2 <- rmat2[,2:3]
+  rmat2[,2] <- rmat2[,2]*b2/b1
+  xy <- matrix(rpois(n*2, rmat2), n, 2)
+  colnames(xy) <- c("x", "y")
+  
+  return(xy)
 }
 
 dbnb.gr <- function(x, y, a0, a1, a2, b1, b2) {
-  .check.initials()
-  
   p1 = (b1 + b2 + 1) /(b1 + 1); p2 = (b1 + b2 + 1) /(b2 + 1)
   gr.b1.1 <- x/b1 - (x + y + a0) /(b1 + b2 + 1) - a1 / (b1 + 1)
   gr.b1 <- function(k, m) {(k + m) / (b1 + b2 + 1) - k / (b1 + 1) + gr.b1.1}
@@ -75,10 +98,9 @@ if (FALSE) {
   sapply(tmp, cbind)
 }
 
-
 ### 2. MLE
-bnb <- function (xvec, yvec, abstol=1e-8, method="BFGS", showFlag=FALSE) {
-  .check.input()
+bnb <- function (xvec, yvec, tol = 1e-8, method="BFGS", showFlag=FALSE) {
+  .check.input(xvec, yvec)
   xy.reduced <- as.data.frame(table(xvec,yvec))
   names(xy.reduced) <- c("x", "y","freq")
   xy.reduced <- xy.reduced[xy.reduced$freq != 0,]
@@ -124,10 +146,10 @@ bnb <- function (xvec, yvec, abstol=1e-8, method="BFGS", showFlag=FALSE) {
   
   # result <- multiroot(f = gr.log, start = c(1,1,1,1), positive=TRUE)$root
   # result <- exp(optim(par = log(initial), fn = fn.log, control=list(fnscale=-1), method = "Nelder-Mead")$par)
-  result <- try(exp(optim(par = log(initial), fn = fn.log, gr = gr.log, control=list(fnscale=-1, abstol=abstol), method = method)$par), silent=TRUE)
+  result <- try(exp(optim(par = log(initial), fn = fn.log, gr = gr.log, control=list(fnscale=-1, abstol = tol), method = method)$par), silent=TRUE)
   if (class(result)=="try-error") {
     initial = rep(1,5)
-    result <- exp(optim(par = log(initial), fn = fn.log, gr = gr.log, control=list(fnscale=-1, abstol=abstol), method = method)$par)
+    result <- exp(optim(par = log(initial), fn = fn.log, gr = gr.log, control=list(fnscale=-1, abstol = tol), method = method)$par)
   }
   result <- data.frame(a0 = result[1], a1 = result[2], a2 = result[3], b1 = result[4], b2 = result[5])
   return(result)
@@ -136,11 +158,11 @@ bnb <- function (xvec, yvec, abstol=1e-8, method="BFGS", showFlag=FALSE) {
 if (FALSE) {
   bnb(c(10,1,1),c(10,1,2)); bnb(c(10,1,1),c(10,1,2))
   tt(1)
-  a <- bnb(extractor(1), extractor(38), abstol=1e-15)
+  a <- bnb(extractor(1), extractor(38), tol=1e-15)
   tt(2) # 31secs
   
-  bnb(extractor(2), extractor(5), method="BFGS", abstol=1e-30)
-  bnb(extractor(2), extractor(5), method="Nelder-Mead", abstol=1e-30)
+  bnb(extractor(2), extractor(5), method="BFGS", tol=1e-30)
+  bnb(extractor(2), extractor(5), method="Nelder-Mead", tol=1e-30)
   sum(sapply(dbnb.gr.vec(extractor(2), extractor(5), 0.0004670043, 0.002597285, 0.01597736, 10.48014, 35.76876)[1,],cbind))
   sum(sapply(dbnb.gr.vec(extractor(2), extractor(5), 0.0004686926, 0.002604057, 0.01598007, 10.45238, 35.75869)[1,],cbind))
   
@@ -151,8 +173,7 @@ if (FALSE) {
   bnb(extractor(1), extractor(38), method="BFGS", showFlag=TRUE)
   bnb(extractor(1), extractor(38), method="Nelder-Mead", showFlag=TRUE)
   tt(2) #31sec
-  #lik.bnb(extractor(1), extractor(38), c(5.790158e-03, 4.300688e-03, 7.836757e-02, 7.586956e+01, 1.015767e+02))
-  #lik.bnb(extractor(1), extractor(38), c())
+  #lik.bnb(extractor(1), extractor(38), param = c(5.790158e-03, 4.300688e-03, 7.836757e-02, 7.586956e+01, 1.015767e+02))
   
 }
 # some deviance tests
@@ -160,27 +181,27 @@ if (FALSE) {
   tt(1)
   a <- bnb(extractor(11), extractor(16))
   tt(2) #1.8 sec!
-  lik.bnb(extractor(11), extractor(16),a) #lik = -805
+  lik.bnb(extractor(11), extractor(16), param = a) #lik = -805
   
   tt(1)
   a <- bnb(extractor(11), extractor(16))
   tt(2) #1.9 sec!
-  lik.bnb(extractor(11), extractor(16),a) #lik = -805
+  lik.bnb(extractor(11), extractor(16), param = a) #lik = -805
   
   tt(1)
   a <- bnb(extractor(30), extractor(50))
   tt(2) #0.2 sec!
-  lik.bnb(extractor(30), extractor(50),a) #lik = -113
+  lik.bnb(extractor(30), extractor(50), param = a) #lik = -113
   
   tt(1)
   a <- bnb(extractor(8), extractor(11))
   tt(2) #17 sec!
-  lik.bnb(extractor(8), extractor(11),a) #lik = -1938
+  lik.bnb(extractor(8), extractor(11), param = a) #lik = -1938
   
   tt(1)
   a <- bnb(extractor(1), extractor(3))
   tt(2) #17 sec!
-  lik.bnb(extractor(1), extractor(3),a) #lik = -1458
+  lik.bnb(extractor(1), extractor(3), param = a) #lik = -1458
   
 }
 
@@ -203,7 +224,7 @@ if (FALSE) {
 
 ### 3. Deviance
 dev.bnb <- function(xvec, yvec, param = NULL, a0 = NULL, a1 = NULL, a2= NULL, b1 = NULL, b2 = NULL) {
-  .check.input()
+  .check.input(xvec, yvec)
   
   # If params = NULL, apply bnb. if else, apply those params
   if (is.null (param)) { 
@@ -213,7 +234,7 @@ dev.bnb <- function(xvec, yvec, param = NULL, a0 = NULL, a1 = NULL, a2= NULL, b1
     else { param = c(a0, a1, a2, b1, b2)}
   }
   # Log-likelihood of the bnb model
-  lik.model <- lik.bnb (x = xvec, y = yvec, param = param)
+  lik.model <- lik.bnb (xvec = xvec, yvec = yvec, param = param)
   
   # Reduced calculation
   xy.reduced <- as.data.frame(table(xvec,yvec))
