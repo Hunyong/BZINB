@@ -26,15 +26,17 @@ double inv_digamma(double x, double y)
   {
     h = (boost::math::digamma(x) - y) / boost::math::trigamma(x);
     while (h > x) {
-Rcout <<"inv_digamm hit zero:" << h << " ";
+      #ifdef DEBUG 
+        Rcout <<"inv_digamm hit zero:" << h << " ";
+      #endif
       h /= 2.0;
     }
     x = x - h;
   }
   // if (debug) {Rcout << endl << "inv_digamm = " << x << endl;}
-#ifdef DEBUG 
-  Rcout << "inv_digamm = " << x << " ";
-#endif
+  #ifdef DEBUG 
+    Rcout << "inv_digamm = " << x << " ";
+  #endif
   
   return(x);
 }

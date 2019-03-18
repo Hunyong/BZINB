@@ -2,43 +2,6 @@
 ## 1. Bivariate Poisson
 ##########################################################################################
 
-#' Density of bivariate Poisson distribution (bp)
-#'
-#' This function calculates the density of bp model
-#' at a data point (x, y) under a set of parameters
-#' (m0, m1, m2).
-#'
-#' @param x a number. The first element of the data point.
-#' @param y a number. The second element of the data point.
-#'
-#' @param m0 a positive number. The shared mean parameter.
-#' @param m1 a positive number. The second mean parameter.
-#' @param m2 a positive number. The third mean parameter.
-#'
-#' @param log logical. If TRUE, the log-density is returned.
-#' @param max a positive integer. If at least one of \code{x}
-#' and \code{y} is greater than this value, the density of
-#' zero is returned.
-#'
-#' @return the bp density at the data point
-#'
-#' @examples
-#'
-#' dbp(2, 2, 0, 1, 1)
-#' dbp(100, 100, 0, 1, 1)
-#'
-#' # Sum of joint density should equal the marginal density
-#' sum(sapply(0:100, function(s) dbp(s,2,1,2,2)))
-#' dpois(2, 3)
-#'
-#' # joint(bp) > pois^2 (around diagonal)
-#' dbp(2,2,1,2,2)
-#' dpois(2,3)^2
-#'
-#' # joint(bp) < pois*pois (off-diagonal)
-#' dbp(1,3,1,2,2)
-#' dpois(1,3)*dpois(3,3)
-#'
 dbp <- function(x, y, m0, m1, m2, log = FALSE, max = 500) {
   # max = 500: when counts exceed the max, p = 0
   if (m1 * m2 == 0) {  # previous code doesn't consider when mu1, mu2, or both is 0
@@ -67,23 +30,53 @@ dbp <- function(x, y, m0, m1, m2, log = FALSE, max = 500) {
 }
 dbp.vec <- Vectorize(dbp)
 
+#' @export
+lik.bp <- function(xvec, yvec, m0, m1, m2, param=NULL) {
+  if (!is.null(param)) {
+    if (length(param) != 3) stop("length(param) must be 3.")
+    m0 = param[1]; m1 = param[2]; m2 = param[3]
+  }
+  .check.m(c(m0, m1, m2))
+  sum(log(do.call(dbp.vec, list(x = xvec, y = yvec, m0 = m0, m1 = m1, m2 = m2))))
+}
+
+#' @export
+#' @rdname bp
+rbp <- function(n, m0, m1, m2, param=NULL) {
+  if (!is.null(param)) {
+    if (length(param) != 3) stop("length(param) must be 3.")
+    m0 = param[1]; m1 = param[2]; m2 = param[3]
+  }
+  if (length(n) != 1) {stop("length(n) must be 1.")}
+  .check.m(c(m0, m1, m2))
+  
+  rmat <- matrix(rpois(n*3, lambda = c(m0, m1, m2)), n, 3, byrow=TRUE)
+  xy <- rmat
+  xy[,3] <- rmat[,1] + rmat[,3]
+  xy[,2] <- rmat[,1] + rmat[,2]
+  xy <- xy[,2:3]
+  colnames(xy) <- c("x", "y")
+  return(xy)
+}
 
 bp <- function(xvec, yvec, tol = 1e-6) {
-  .check.input()
+  .check.input(xvec, yvec)
   
-  xvec <- as.numeric(xvec); yvec <- as.numeric(yvec)
+  xvec = as.integer(round(xvec, digits = 0))
+  yvec = as.integer(round(yvec, digits = 0))
+  
   len <- length(xvec)
   # xbar <- mean(xvec)
   # ybar <- mean(yvec)
   vec <- cbind(xvec,yvec)
   bar <- apply(vec,2,mean)
   m <- min(bar)
-  lik.bp <- function(a) (-sum(apply(vec, 1, dbp, m0 = a, m1 = bar[1] - a, m2 = bar[2] - a, log = TRUE)))
+  lik.bp2 <- function(a) (-sum(apply(vec, 1, dbp, m0 = a, m1 = bar[1] - a, m2 = bar[2] - a, log = TRUE)))
   # result <- nlminb(m, lik, lower = 0)
   if (m == 0) {  # when either is all zero, then mu0 is automatically 0.
     result = data.frame(par = 0, value = NA)  # lik not actually NA but can be obtained if necessary
   } else {
-    result <- optim(m, lik.bp, lower = 0, upper = m, method="Brent")
+    result <- optim(m, lik.bp2, lower = 0, upper = m, method="Brent")
   }
   result <- data.frame(mu0 = result$par, mu1 = bar[1] - result$par, mu2 = bar[2] - result$par, likelihood = -result$value)
   rownames(result) <- NULL
@@ -102,44 +95,69 @@ if (FALSE) { # example
 ##########################################################################################
 
 ## 2.1 basic functions for BvZIP
-dbzip <- function(x, y = NULL, pp, m0, m1, m2, log = FALSE) {
-  fxy <- (1-pp) * dbp (x=x, y=y, m0 = m0, m1 = m1, m2 = m2) + ifelse((x == 0 & y == 0), pp,0)
+dbzip.a <- function(x, y = NULL, m0, m1, m2, p, log = FALSE) {
+  fxy <- (1 - p) * dbp (x=x, y=y, m0 = m0, m1 = m1, m2 = m2) + ifelse((x == 0 & y == 0), p,0)
   if (log) {fxy <- log(fxy)}
   return(fxy)
 }
-dbzip.vec <- Vectorize(dbzip)
-lik.bzip <- function(x, y, param, pp = NULL, m0  = NULL, m1  = NULL, m2  = NULL){
-  if (is.null(pp)|is.null(m0)|is.null(m1)|is.null(m2)) {
-    pp = param[1]; m0 = param[2]; m1 = param[3]; m2 = param[4]
+dbzip.a.vec <- Vectorize(dbzip.a)
+
+#' @export
+#' 
+lik.bzip.a <- function(xvec, yvec, m0, m1, m2, p, param=NULL) {
+  if (!is.null(param)) {
+    if (length(param) != 4) stop("length(param) must be 4.")
+    m0 = param[1]; m1 = param[2]; m2 = param[3]; p = param[4]
   }
-  sum(dbzip.vec(x, y, pp = pp, m0 = m0, m1 = m1, m2 = m2, log=TRUE))
+  .check.input(xvec, yvec)
+  .check.m(c(m0, m1, m2))
+  .check.p(c(p, 1 - p, 0, 0))
+  sum(dbzip.a.vec(x = xvec, y = yvec, m0 = m0, m1 = m1, m2 = m2, p = p, log=TRUE))
 }
-rbzip <- function(n, pp, m0, m1, m2) {
-  z <- rbinom(n,1,pp)
-  common.tmp <- rpois(n,m0)
-  x.tmp <- rpois(n,m1)
-  y.tmp <- rpois(n,m2)
-  x <- (common.tmp + x.tmp)*(1-z)
-  y <- (common.tmp + y.tmp)*(1-z)
-  return(data.frame(x=x, y=y))
+
+#' @export
+#' 
+rbzip.a <- function(n, m0, m1, m2, p, param = NULL) {
+  if (!is.null(param)) {
+    if (length(param) != 4) stop("length(param) must be 4.")
+    m0 = param[1]; m1 = param[2]; m2 = param[3]; p = param[4]
+  }
+  if (length(n) != 1) {stop("length(n) must be 1.")}
+  .check.m(c(m0, m1, m2))
+  .check.p(c(p, 1 - p, 0, 0))
+  
+  rmat <- matrix(rpois(n*3, lambda = c(m0, m1, m2)), n, 3, byrow=TRUE)
+  xy <- rmat
+  xy[,3] <- rmat[,1] + rmat[,3]
+  xy[,2] <- rmat[,1] + rmat[,2]
+  xy <- xy[,2:3]
+  colnames(xy) <- c("x", "y")
+  z <- rbinom(n, 1, p)
+  xy <- xy * (1 - z)
+  return(xy)
 }
-rbzip.vec <- Vectorize(rbzip)
 
 ## 2.2 param estimation
 # formal EM algorithm
-bzip <- function(xvec, yvec, tol = 1e-6, initial = NULL, showFlag = FALSE) { #MLE based on score equations : fail (not convex)
-  .check.input()
+bzip.a <- function(xvec, yvec, tol = 1e-6, initial = NULL, showFlag = FALSE) { #MLE based on score equations : fail (not convex)
+  .check.input(xvec, yvec)
+  
+  if (!is.null(initial)) {
+    if (length(initial) != 4) {stop("length(initial) must be 4.")}
+    .check.m(initial[1:3])
+    .check.p(c(initial[4], 1 - initial[4], 0, 0))
+  }
   
   # counter, likelihood, param.prev for recursive function
   len <- length(xvec)          # n
-  vec <- data.frame(xvec=xvec, yvec=yvec)
-  sum.x.y <- apply(vec,2,sum)  # mu0+mu1, mu0+mu2
-  if (sum(sum.x.y) ==0 ) { return(data.frame(pp = 0, mu0 = 0, mu1 = 0, mu2 = 0))} # everything is zero ==> nonestimable, set pi = 0
+  vec <- data.frame(xvec = xvec, yvec = yvec)
+  sum.x.y <- apply(vec, 2, sum)  # mu0+mu1, mu0+mu2
+  if (sum(sum.x.y) ==0 ) { return(data.frame(mu0 = NA, mu1 = NA, mu2 = NA, p= NA))} # everything is zero ==> nonestimable, set pi = 0
 
   # E-step
-  fun.cond.exp <- function(x, y, pp, m0, m1, m2) {
+  fun.cond.exp <- function(x, y, m0, m1, m2, p) {
     if (x+y == 0) {
-      cond.prob <- pp/(pp+(1-pp)*exp(-m0-m1-m2))
+      cond.prob <- p / (p + (1-p) * exp(-m0 -m1 -m2))
       cond.expt <- c(1, m0, m1, m2) * cond.prob
     } else {
       m = min(x,y)
@@ -161,35 +179,33 @@ bzip <- function(xvec, yvec, tol = 1e-6, initial = NULL, showFlag = FALSE) { #ML
       eu <- sum((0:m)*prob)/sum(prob)
       cond.expt <- c(0, 0, x, y) + eu *c(0, 1, -1, -1)
     }
-    return(cond.expt)
+    return(cond.expt[c(2:4,1)]) # changing (p, m0, m1, m2) to (m0, m1, m2, p) 
   }
   fun.cond.exp <- Vectorize(fun.cond.exp)
 
   # M-step
-  param.update <- function(x, y, pp, m0, m1, m2) {
-    result <- fun.cond.exp(x = x, y = y, pp = pp, m0 = m0, m1 = m1, m2 = m2)
-    return(apply(result,1,mean))
+  param.update <- function(x, y, m0, m1, m2, p) {
+    result <- fun.cond.exp(x = x, y = y, m0 = m0, m1 = m1, m2 = m2, p = p)
+    return(apply(result, 1, mean))
   }
 
   # initial guess
   if (is.null(initial)) { # when initial(starting point) is not provided
-    initial <- c(0.5,1,1,1)
+    initial <- c(1, 1, 1, 0.5)
   }
 
   # Repeat
   iter = 0
   param = initial
-  if (showFlag) {print(c("iter", "pi", paste0("mu",0:2)))}
+  if (showFlag) {print(c("iter", paste0("mu",0:2), "pi"))}
   repeat {
     iter = iter + 1
-    #print(c(param))
-    #print(lik(vec, pp=param[1], m0=param[2], m1=param[3], m2=param[4])) # debug
     param.old <- param # saving old parameters
-    param <- param.update (x = xvec, y = yvec, pp = param[1], m0 = param[2], m1 = param[3], m2 = param[4])
-    if (showFlag) {print(c(iter, round(param,5), lik.bzip(xvec, yvec, param)))}
+    param <- param.update (x = xvec, y = yvec, m0 = param[1], m1 = param[2], m2 = param[3], p = param[4])
+    if (showFlag) {print(c(iter, round(param, 5), lik.bzip.a(xvec, yvec, param = param)))}
     if (max(abs(param - param.old)) <= tol) {
       param <- data.frame(matrix(param,1,4))
-      names(param) <- c("pp", "mu0", "mu1", "mu2")
+      names(param) <- c("mu0", "mu1", "mu2", "p")
       return(param)
       break
     }
@@ -210,11 +226,11 @@ if (FALSE) {
 }
 
 
-moment.bzip <- function(pp, m0, m1, m2) {
+moment.bzip <- function(m0, m1, m2, p) {
   mean.bp <- (m0 + c(m1, m2))
   var.bp <- diag(mean.bp); var.bp[c(2,3)] <- m0
-  mean <- (1-pp)*mean.bp
-  var <- (1-pp)*var.bp + pp*(1-pp) * mean.bp %o% mean.bp
+  mean <- (1 - p)*mean.bp
+  var <- (1 - p)*var.bp + p*(1 - p) * mean.bp %o% mean.bp
   cor <- var[2] / sqrt(prod(diag(var)))
   return(list(mean = mean, var = var, cor = cor))
 }
@@ -225,7 +241,7 @@ moment.bzip <- function(pp, m0, m1, m2) {
 ##########################################################################################
 
 ## 3.1 basic functions for bzip.b
-dbzip.b <- function(x, y = NULL, p1, p2, p3, p4 = 1 - p1 - p2 - p3, m0, m1, m2, log = FALSE) {
+dbzip.b <- function(x, y = NULL, m0, m1, m2, p1, p2, p3, p4 = 1 - p1 - p2 - p3, log = FALSE) {
   fxy <- p1 * dbp (x=x, y=y, m0 = m0, m1 = m1, m2 = m2) +
     p2 * {if (y == 0) dbp (x=x, y=y, m0 = 0, m1 = m0 + m1, m2 = 0) else 0} +
     p3 * {if (x == 0) dbp (x=x, y=y, m0 = 0, m1 = 0, m2 = m0 + m2) else 0} +
@@ -234,30 +250,42 @@ dbzip.b <- function(x, y = NULL, p1, p2, p3, p4 = 1 - p1 - p2 - p3, m0, m1, m2, 
   return(fxy)
 }
 dbzip.b.vec <- Vectorize(dbzip.b)
-lik.bzip.b <- function(x, y, param, p1 = NULL, p2 = NULL, p3 = NULL, p4 = NULL, m0  = NULL, m1  = NULL, m2  = NULL){
-  if (is.null(p1)|is.null(p2)|is.null(p3)|is.null(p4)|is.null(m0)|is.null(m1)|is.null(m2)) {
-    p1 = param[1]; p2 = param[2]; p3 = param[3]; p4 = param[4];
-    m0 = param[5]; m1 = param[6]; m2 = param[7]
+lik.bzip.b <- function(xvec, yvec, m0 , m1, m2, p1, p2, p3, p4, param = NULL){
+  if (!is.null(param)) {
+    if (length(param) != 7) stop("length(param) must be 7.")
+    m0 = param[1]; m1 = param[2]; m2 = param[3]
+    p1 = param[4]; p2 = param[5]; p3 = param[6]; p4 = param[7]
   }
-  sum(dbzip.b.vec(x, y, p1 = p1, p2 = p2, p3 = p3, p4 = p4,
-                  m0 = m0, m1 = m1, m2 = m2, log=TRUE))
+  sum(dbzip.b.vec(x = xvec, y = yvec, m0 = m0, m1 = m1, m2 = m2, 
+                  p1 = p1, p2 = p2, p3 = p3, p4 = p4, log = TRUE))
 }
-rbzip.b <- function(n, p1, p2, p3, p4, m0, m1, m2) {
-  z <- rmultinom(n,1,c(p1,p2,p3,p4))
-  u.tmp <- rpois(n,m0)
-  v.tmp <- rpois(n,m1)
-  w.tmp <- rpois(n,m2)
-  #(Xi, Yi) = ((Ei1 + Ei2)(Ui + Vi), (Ei1 + Ei3)(Ui + Wi)).
-  x <- (z[1,] + z[2,]) * (u.tmp + v.tmp)
-  y <- (z[1,] + z[3,]) * (u.tmp + w.tmp)
-  return(data.frame(x=x, y=y))
+
+rbzip.b <- function(n, m0, m1, m2, p1, p2, p3, p4, param = NULL) {
+  if (!is.null(param)) {
+    if (length(param) != 7) stop("length(param) must be 4.")
+    m0 = param[1]; m1 = param[2]; m2 = param[3]; p1 = param[4]
+    p2 = param[5]; p3 = param[6]; p4 = param[7]
+  }
+  if (length(n) != 1) {stop("length(n) must be 1.")}
+  .check.m(c(m0, m1, m2))
+  .check.p(c(p1, p2, p3, p4))
+  
+  rmat <- matrix(rpois(n*3, lambda = c(m0, m1, m2)), n, 3, byrow=TRUE)
+  xy <- rmat
+  xy[,3] <- rmat[,1] + rmat[,3]
+  xy[,2] <- rmat[,1] + rmat[,2]
+  xy <- xy[,2:3]
+  colnames(xy) <- c("x", "y")
+  E <- t(rmultinom(n, 1, c(p1, p2, p3, p4)))
+  z <- cbind(E[,1] + E[,2], E[,1] + E[,3])
+  
+  xy <- xy * z
+  return(xy) 
 }
 
 ## 3.2 parameter estimation
 # Method of moment, for starting values of MLE
 mme.bzip.b <- function(xvec, yvec) {
-  .check.input()
-  
   m.x <- mean(xvec); m.x2 <- mean(xvec^2)
   m.y <- mean(yvec); m.y2 <- mean(yvec^2)
   m.x2.y <- mean(xvec^2*yvec); m.y2.x <- mean(yvec^2*xvec)
@@ -278,21 +306,27 @@ mme.bzip.b <- function(xvec, yvec) {
   pi <- c(pi1, pi2, pi3, pi4)
   pi <- pmax(0, pmin(pi,1))
   pi <- pi/sum(pi)
-  return(data.frame(pi1 = pi[1], pi2 = pi[2], pi3 = pi[3], pi4 = pi[4], mu0 = mu0, mu1 = mu1, mu2 = mu2))
+  return(data.frame(mu0 = mu0, mu1 = mu1, mu2 = mu2,
+                    pi1 = pi[1], pi2 = pi[2], pi3 = pi[3], pi4 = pi[4]))
 }
 
 bzip.b <- function(xvec, yvec, tol = 1e-6, initial = NULL, showFlag = FALSE, maxiter = 200) {
-  .check.input()
-  
+  .check.input(xvec, yvec)
+  if (!is.null(initial)) {
+    if (length(initial) != 7) {stop("length(initial) must be 7.")}
+    .check.m(initial[1:3])
+    .check.p(initial[6:9])
+  }
   # counter, likelihood, param.prev for recursive function
   # initial guess manipulation (for small counts pi4=0)
   len <- length(xvec)          # n
   vec <- data.frame(xvec=xvec, yvec=yvec)
   sum.x.y <- apply(vec,2,sum)  # mu0+mu1, mu0+mu2
-  if (sum(sum.x.y) ==0 ) { return(data.frame(p1 = 0, p2 = 0, p3 = 0, p4 = 1,  mu0 = 0, mu1 = 0, mu2 = 0))} # everything is zero ==> nonestimable, set pi = 0
+  if (sum(sum.x.y) ==0 ) { return(data.frame(mu0 = NA, mu1 = NA, mu2 = NA, p1 = NA, 
+                                             p2 = NA, p3 = NA, p4 = NA))} # everything is zero ==> nonestimable
 
   # E-step
-  fun.cond.exp.a <- function(x, y, p1, p2, p3, p4, m0, m1, m2) {
+  fun.cond.exp.a <- function(x, y, m0, m1, m2, p1, p2, p3, p4) {
     pra <- p1 * dbp(x=x, y=y, m0 = m0, m1 = m1, m2 = m2)
     prb <- p2 * (y==0) * dbp(x=x, y=0, m0 =0, m1 = m0 + m1, m2 = 0)
     prc <- p3 * (x==0) * dbp(x=0, y=y, m0 =0, m1 = 0, m2 = m0 + m2)
@@ -332,30 +366,31 @@ bzip.b <- function(xvec, yvec, tol = 1e-6, initial = NULL, showFlag = FALSE, max
   fun.cond.exp <- Vectorize(fun.cond.exp.a)
 
   # M-step
-  param.update <- function(x, y, p1, p2, p3, p4, m0, m1, m2) {
-    result <- fun.cond.exp(x, y, p1, p2, p3, p4, m0, m1, m2)
+  param.update <- function(x, y, m0, m1, m2, p1, p2, p3, p4) {
+    result <- fun.cond.exp(x, y, m0, m1, m2, p1, p2, p3, p4)
     #print(result)  ####debug
     result[result < 0] <- 0
     result <- apply(result,1,mean)
-    result2 <- result[1:4]
-    result2[5] <- result[6]/result[5]
-    result2[6] <- result[8]/result[7]
-    result2[7] <- result[10]/result[9]
-    result2[is.na(result2)] <- as.numeric(c(p1, p2, p3, p4, m0, m1, m2))[is.na(result2)]
+    result2 <- result[4:7]
+    result2[1] <- result[6]/result[5]
+    result2[2] <- result[8]/result[7]
+    result2[3] <- result[10]/result[9]
+    result2[is.na(result2)] <- as.numeric(c(m0, m1, m2, p1, p2, p3, p4))[is.na(result2)]
     return(result2)
   }
 
   # initial guess
   if (is.null(initial)) { # when initial(starting point) is not provided
-    initial <- mme.bzip.b(xvec=xvec, yvec=yvec)
-    if (sum(is.na(initial))>0) {
-      initial <- bin.profile(xvec, yvec)   # freq of each zero-nonzero profile
+    initial <- mme.bzip.b(xvec = xvec, yvec = yvec)
+    if (sum(is.na(initial)) > 0) {
+      initial <- rep(0, 7)
+      initial[4:7] <- bin.profile(xvec, yvec)   # freq of each zero-nonzero profile
       initial <- initial/sum(initial)      # relative freq
-      initial[5:7] <- c(0.001, sum.x.y/len/(1-initial[4]))
+      initial[1:3] <- c(0.001, sum.x.y/len/(1-initial[7]))
     }
     if (min(sum.x.y) < 5 & min(sum.x.y) > 0) {
-      initial[2:3] <- (initial[4] - 1e-10) * sum.x.y/sum(sum.x.y)
-      initial[4] <- 1e-10}
+      initial[5:6] <- (initial[7] - 1e-10) * sum.x.y/sum(sum.x.y)
+      initial[7] <- 1e-10}
     #print(initial)
   }
   initial <- pmax(initial, rep(1e-10, 7))
@@ -364,22 +399,22 @@ bzip.b <- function(xvec, yvec, tol = 1e-6, initial = NULL, showFlag = FALSE, max
   # Repeat
   iter = 0
   param = initial
-  if (showFlag) {print(c("iter", paste0("p",1:4), paste0("mu",0:2)))}
+  if (showFlag) {print(c("iter", paste0("mu",0:2), paste0("p",1:4)))}
   repeat {
     if (iter >= maxiter) { warning("EM exceeded maximum number of iterations")
       param <- data.frame(matrix(NA,1,7))
-      names(param) <- c("p1", "p2", "p3", "p4", "mu0", "mu1", "mu2")
+      names(param) <- c("mu0", "mu1", "mu2", "p1", "p2", "p3", "p4")
       return(param)}
 
     iter = iter + 1
-    # print(lik(vec, pp=param[1:4], m0=param[5], m1=param[6], m2=param[7])) # debug
     param.old <- param # saving old parameters
-    param <- param.update (x = xvec, y = yvec, p1 = param[1], p2 = param[2], p3 = param[3], p4 = param[4], m0=param[5], m1=param[6], m2=param[7])
+    param <- param.update (x = xvec, y = yvec,m0=param[1], m1=param[2], m2=param[3],
+                           p1 = param[4], p2 = param[5], p3 = param[6], p4 = param[7])
     # cat("param = ", paste0(param, collapse = ", "), "\n param.old = ", paste0(param.old, collapse = ", "), "\n")
-    if (showFlag) {print(c(iter, round(param,5), lik.bzip.b(xvec,yvec,param=param) ))} #lik.bzip(xvec, yvec, param)
+    if (showFlag) {print(c(iter, round(param, 5), lik.bzip.b(xvec, yvec, param = param) ))} #lik.bzip(xvec, yvec, param)
     if (max(abs(param - param.old)) <= tol) {
       param <- data.frame(matrix(param,1,7))
-      names(param) <- c("p1", "p2", "p3", "p4", "mu0", "mu1", "mu2")
+      names(param) <- c("mu0", "mu1", "mu2", "p1", "p2", "p3", "p4")
       return(param)
       break
     }
@@ -407,14 +442,14 @@ if (FALSE) {
 
   tt(1)
   bzip(extractor(1),extractor(2), showFlag=TRUE)      #EM (bzip)
-  #   pp          mu0      mu1       mu2
+  #   p          mu0      mu1       mu2
   # 0.9525 0.0001888937 14.52612 0.6840215
   # 1122 iterations, 58 sec
   tt(2)
 
   tt(1)
   bzip.old(extractor(1),extractor(2), showFlag=TRUE)   #Direct maximization
-  # pp          mu0      mu1       mu2
+  # p          mu0      mu1       mu2
   # 0.9525 7.699164e-09 14.52631 0.6842103
   # 3 iterations, 0.53 sec
   tt(2)
