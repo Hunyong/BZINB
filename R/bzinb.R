@@ -266,8 +266,7 @@ bzinb.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=50000, s
   }
 
   # print(c(param, showFlag, iter))  
-  result <- list(call = call,
-                 rho = matrix(c(rho, logit.rho, if(se) std.param[c("rho", "logit.rho")] else rep(NA, 2)),
+  result <- list(rho = matrix(c(rho, logit.rho, if(se) std.param[c("rho", "logit.rho")] else rep(NA, 2)),
                               ncol = 2, dimnames = list(c("rho", "logit.rho"), c("Estimate", "Std.err"))),
                  coefficients = matrix(c(param, if(se) std.param[1:9] else rep(NA, 9)),
                                        ncol = 2, dimnames = list(abp.names, c("Estimate", "Std.err"))), 
