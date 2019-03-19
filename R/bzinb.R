@@ -79,6 +79,7 @@ dbzinb.vec <- Vectorize(dbzinb)
 #' 
 #' @import Rcpp BH
 #' @export
+#' @useDynLib bzinb
 #' 
 lik.bzinb <- function(xvec, yvec, a0, a1, a2, b1, b2, p1, p2, p3, p4, param=NULL) {
   if (!is.null(param)) {
@@ -167,13 +168,7 @@ abp.names <- c("a0", "a1", "a2", "b1", "b2", "p1", "p2", "p3", "p4") # global va
 expt.names <- c("lik", "ER0", "ER1", "ER2", "ElogR0", "ElogR1", "ElogR2", "EE1", "EE2", "EE3", "EE4", "EV")
 
 bzinb.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=50000, showFlag=FALSE, vcov = FALSE) {
-  if (!is.null(initial)) {
-    if (length(initial) != 9) {stop("length(initial) must be 9.")}
-    .check.ab(initial[1:5])
-    .check.p(initial[6:9])
-  }
   se = TRUE  # se is estimated by default
-  require(rootSolve)
   xy.reduced <- as.data.frame(table(xvec,yvec))
   names(xy.reduced) <- c("x", "y","freq")
   xy.reduced <- xy.reduced[xy.reduced$freq != 0,]
@@ -182,9 +177,6 @@ bzinb.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=50000, s
   xy.reduced$freq <- as.numeric(as.character(xy.reduced$freq))
   n <- sum(xy.reduced$freq)
   n.reduced <- as.integer(length(xy.reduced$freq))
-  # XMAX <- max(xy.reduced$x)
-  # YMAX <- max(xy.reduced$y)
-  # XYMAX(XMAX, YMAX)
   
   if (max(xvec)==0 & max(yvec)==0) {return(c(rep(1e-10,5),1,0,0,0, 0, 1, 0, if (se) {rep(NA, 11)}))} # 9 params, lik, iter, pureCor, and 11 se's
   #print(xy.reduced)
@@ -290,9 +282,14 @@ bzinb.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=50000, s
 
 #' @export
 #' @rdname bzinb
-bzinb <- function(xvec, yvec, initial = NULL, tol = 1e-8, maxiter=50000, showFlag=FALSE,
+bzinb <- function(xvec, yvec, initial = NULL, tol = 1e-8, maxiter = 50000, showFlag = FALSE,
                   vcov = FALSE) {
   .check.input(xvec, yvec)
+  if (!is.null(initial)) {
+    if (length(initial) != 9) {stop("length(initial) must be 9.")}
+    .check.ab(initial[1:5])
+    .check.p(initial[6:9])
+  }
   
   # if (!is.integer(xvec) | !is.integer(yvec)) stop("xvec and yvec must be integers.")
   # nonnegative
@@ -300,13 +297,12 @@ bzinb <- function(xvec, yvec, initial = NULL, tol = 1e-8, maxiter=50000, showFla
   # any(is.na(xvec))
   xvec = as.integer(round(xvec, digits = 0))
   yvec = as.integer(round(yvec, digits = 0))
-  call <- match.call()
   result <- try(bzinb.base(xvec, yvec, initial = initial, tol = tol, maxiter = maxiter, 
-                           showFlag = showFlag, se = se, vcov = vcov))
+                           showFlag = showFlag, vcov = vcov))
   if (class(result)=="try-error") {
     result <- list(rho = matrix(rep(NA, 4),
                                 ncol = 2, dimnames = list(c("rho", "logit.rho"), c("Estimate", "Std.err"))),
-                   coefficients = matrix(rep(NA, 9),
+                   coefficients = matrix(rep(NA, 18),
                                          ncol = 2, dimnames = list(abp.names, c("Estimate", "Std.err"))), 
                    lik = NA,
                    iter = NA)
