@@ -1,3 +1,9 @@
+##########################################################################################
+## 3. Bivariate Negative Binomial (BNB)
+##########################################################################################
+
+#' @import Rcpp BH
+
 ### 1. Density, likelihood, gradient :  This function affects bzinb3, bzinb4
 dbnb <- function(x, y, a0, a1, a2, b1, b2, log=FALSE) {
   p1 = (b1 + b2 + 1) /(b1 + 1); p2 = (b1 + b2 + 1) /(b2 + 1)
@@ -17,6 +23,62 @@ if (FALSE) {
   sum(tmp) #1
 }
 dbnb.vec <- Vectorize(dbnb)
+
+
+#' @rdname bnb
+#' @name bnb
+#' @aliases rbnb
+#' @aliases bnb
+#' @aliases lik.bnb
+#' 
+#' @title The bivariate negative binomial distribution
+#' 
+#' @description random generation (\code{rbnb}), maximum likelihood estimation (\code{bnb}), 
+#'    and log-likelihood. (\code{lik.bnb})  for the bivariate negative binomial 
+#'    distribution with parameters equal to \code{(a0, a1, a2, b1, b2)}.
+#' 
+#' @param xvec,yvec a pair of bnb random vectors. nonnegative integer vectors. 
+#'    If not integers, they will be rounded to the nearest integers.
+#' @param param a vector of parameters (\code{(a0, a1, a2, b1, b2)}). 
+#'    Either \code{param} or individual parameters (\code{a0, a1, a2, b1, b2}) 
+#'    need to be provided.
+#' @param a0,a1,a2 shape parameters of the latent gamma variables. must be positive.
+#' @param b1,b2 scale parameters for the latent gamma variables. must be positive.
+#' @param n number of observations.
+#' @param tol tolerance for judging convergence. \code{tol = 1e-8} by default.
+#' @param showFlag if \code{TRUE}, the updated parameter estimates for each iteration 
+#'   are printed out. If a positive integer, the updated parameter estimates for 
+#'   iterations greater than \code{showFlag} are printed out.
+#' 
+#' @return 
+#'  \itemize{
+#'    \item \code{rbnb} gives a pair of random vectors following BNB distribution.
+#'    \item \code{bnb} gives the maximum likelihood estimates of a BNB pair.
+#'    \item \code{lik.bnb} gives the log-likelihood of a set of parameters for a BNB pair.
+#'
+#'  }
+#'  
+#' 
+#' @examples
+#' # generating a pair of random vectors
+#' set.seed(1)
+#' data1 <- rbnb(n = 20, a0 = 1, a1 = 1, a2 = 1, 
+#'                 b1 = 1, b2 = 1)
+#' 
+#' lik.bnb(xvec = data1[, 1], yvec = data1[ ,2], 
+#'           a0 = 1, a1 = 1, a2 = 1, b1 = 1, b2 = 1) 
+#' 
+#' bnb(xvec = data1[,1], yvec = data1[,2], showFlag = F)
+#' 
+#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park
+#' @references
+#'  Cho, H., Preisser, J., Liu, C., Wu, D. (In preparation), "A bivariate 
+#'  zero-inflated negative binomial model for identifying underlying dependence"
+#' 
+#' @import Rcpp BH
+#' @export
+#' @useDynLib bzinb
+#'
 lik.bnb <- function(xvec, yvec, a0, a1, a2, b1, b2, param = NULL) {
   if (!is.null(param)) {
     if (length(param) != 5) stop("length(param) must be 5.")
@@ -25,9 +87,11 @@ lik.bnb <- function(xvec, yvec, a0, a1, a2, b1, b2, param = NULL) {
   sum(log(dbnb.vec(xvec, yvec, a0, a1, a2, b1, b2)))
 }
 
+
+
 #' @export
-#' @rdname bzinb
-rbzinb <- function(n, a0, a1, a2, b1, b2, param = NULL) {
+#' @rdname bnb
+rbnb <- function(n, a0, a1, a2, b1, b2, param = NULL) {
   if (!is.null(param)) {
     if (length(param) != 5) stop("length(param) must be 5.")
     a0 = param[1]; a1 = param[2]; a2 = param[3]; b1 = param[4]; b2 = param[5]
@@ -99,7 +163,9 @@ if (FALSE) {
 }
 
 ### 2. MLE
-bnb <- function (xvec, yvec, tol = 1e-8, method="BFGS", showFlag=FALSE) {
+#' @export
+#' @rdname bnb
+bnb <- function (xvec, yvec, tol = 1e-8, showFlag=FALSE) {
   .check.input(xvec, yvec)
   xy.reduced <- as.data.frame(table(xvec,yvec))
   names(xy.reduced) <- c("x", "y","freq")
@@ -107,9 +173,8 @@ bnb <- function (xvec, yvec, tol = 1e-8, method="BFGS", showFlag=FALSE) {
   xy.reduced$x <- as.numeric(as.character(xy.reduced$x))
   xy.reduced$y <- as.numeric(as.character(xy.reduced$y))
   xy.reduced$freq <- as.numeric(as.character(xy.reduced$freq))
-  if (max(xvec)==0 & max(yvec)==0) {return(rep(1e-10,5))}
-  #print(xy.reduced)
-
+  if (max(xvec)==0 & max(yvec)==0) return(c(a0 = NA, a1 = NA, a2 = NA, b1 = NA, b2 = NA))
+  
   fn.1 = function (param) {
     val <- dbnb.gr.vec( x = xy.reduced$x, y = xy.reduced$y,  a0 = param[1], a1 = param[2], a2 = param[3], b1 = param[4], b2 = param[5])
     lik <- sapply(val[1,],cbind) %*% xy.reduced$freq
@@ -144,82 +209,14 @@ bnb <- function (xvec, yvec, tol = 1e-8, method="BFGS", showFlag=FALSE) {
   initial <- pmax(initial, 1e-5)
   #print(initial) ###
   
-  # result <- multiroot(f = gr.log, start = c(1,1,1,1), positive=TRUE)$root
-  # result <- exp(optim(par = log(initial), fn = fn.log, control=list(fnscale=-1), method = "Nelder-Mead")$par)
-  result <- try(exp(optim(par = log(initial), fn = fn.log, gr = gr.log, control=list(fnscale=-1, abstol = tol), method = method)$par), silent=TRUE)
+  result <- try(exp(optim(par = log(initial), fn = fn.log, gr = gr.log, control=list(fnscale=-1, abstol = tol), method = "BFGS")$par), silent=TRUE)
   if (class(result)=="try-error") {
     initial = rep(1,5)
-    result <- exp(optim(par = log(initial), fn = fn.log, gr = gr.log, control=list(fnscale=-1, abstol = tol), method = method)$par)
+    result <- exp(optim(par = log(initial), fn = fn.log, gr = gr.log, control=list(fnscale=-1, abstol = tol), method = "BFGS")$par)
   }
-  result <- data.frame(a0 = result[1], a1 = result[2], a2 = result[3], b1 = result[4], b2 = result[5])
+  result <- c(a0 = result[1], a1 = result[2], a2 = result[3], b1 = result[4], b2 = result[5])
   return(result)
 }
-# simple tests
-if (FALSE) {
-  bnb(c(10,1,1),c(10,1,2)); bnb(c(10,1,1),c(10,1,2))
-  tt(1)
-  a <- bnb(extractor(1), extractor(38), tol=1e-15)
-  tt(2) # 31secs
-  
-  bnb(extractor(2), extractor(5), method="BFGS", tol=1e-30)
-  bnb(extractor(2), extractor(5), method="Nelder-Mead", tol=1e-30)
-  sum(sapply(dbnb.gr.vec(extractor(2), extractor(5), 0.0004670043, 0.002597285, 0.01597736, 10.48014, 35.76876)[1,],cbind))
-  sum(sapply(dbnb.gr.vec(extractor(2), extractor(5), 0.0004686926, 0.002604057, 0.01598007, 10.45238, 35.75869)[1,],cbind))
-  
-  tt(1)
-  bnb(extractor(1), extractor(3), method="BFGS")
-  tt(2) #8sec
-  tt(1)
-  bnb(extractor(1), extractor(38), method="BFGS", showFlag=TRUE)
-  bnb(extractor(1), extractor(38), method="Nelder-Mead", showFlag=TRUE)
-  tt(2) #31sec
-  #lik.bnb(extractor(1), extractor(38), param = c(5.790158e-03, 4.300688e-03, 7.836757e-02, 7.586956e+01, 1.015767e+02))
-  
-}
-# some deviance tests
-if (FALSE) {
-  tt(1)
-  a <- bnb(extractor(11), extractor(16))
-  tt(2) #1.8 sec!
-  lik.bnb(extractor(11), extractor(16), param = a) #lik = -805
-  
-  tt(1)
-  a <- bnb(extractor(11), extractor(16))
-  tt(2) #1.9 sec!
-  lik.bnb(extractor(11), extractor(16), param = a) #lik = -805
-  
-  tt(1)
-  a <- bnb(extractor(30), extractor(50))
-  tt(2) #0.2 sec!
-  lik.bnb(extractor(30), extractor(50), param = a) #lik = -113
-  
-  tt(1)
-  a <- bnb(extractor(8), extractor(11))
-  tt(2) #17 sec!
-  lik.bnb(extractor(8), extractor(11), param = a) #lik = -1938
-  
-  tt(1)
-  a <- bnb(extractor(1), extractor(3))
-  tt(2) #17 sec!
-  lik.bnb(extractor(1), extractor(3), param = a) #lik = -1458
-  
-}
-
-if (FALSE) {
-  tt(1)
-  a <- pairwise.MLE(data=data[iset.Mm.c2[[1]],], ML.fun = bnb, showFlag=TRUE)
-  tt(2)
-  bnb(extractor(1), extractor(12), showFlag=TRUE)
-  bnb(extractor(51), extractor(12), showFlag=TRUE)
-  
-  tt(1)
-  MLE.Geneset1$bnb <- pairwise.MLE(data[iset.Mm.c2[[1]],], ML.fun = bnb, showFlag=TRUE)  ## 1.8hrs
-  tt(2)
-  
-  bnb(0,155)
-  
-}
-
 
 
 ### 3. Deviance

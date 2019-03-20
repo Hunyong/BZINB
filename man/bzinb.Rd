@@ -18,6 +18,8 @@ bzinb(xvec, yvec, initial = NULL, tol = 1e-08, maxiter = 50000,
 \arguments{
 \item{n}{number of observations.}
 
+\item{a0, a1, a2}{shape parameters of the latent gamma variables. must be positive.}
+
 \item{b1, b2}{scale parameters for the latent gamma variables. must be positive.}
 
 \item{p1, p2, p3, p4}{proportions summing up to 1 (\code{p1 + p2 + p3 + p4 = 1}). 
@@ -28,7 +30,7 @@ bzinb(xvec, yvec, initial = NULL, tol = 1e-08, maxiter = 50000,
 
 \item{param}{a vector of parameters (\code{(a0, a1, a2, b1, b2, p1, p2, p3, p4)}). 
 Either \code{param} or individual parameters (\code{a0, a1, a2, b1, b2, p1, p2, p3, p4}) 
-need to be provided.#' @param a0,a1,a2 shape parameters of the latent gamma variables. must be positive.}
+need to be provided.}
 
 \item{xvec, yvec}{a pair of bzinb random vectors. nonnegative integer vectors. 
 If not integers, they will be rounded to the nearest integers.}
@@ -64,7 +66,7 @@ are returned.}
 }
 \description{
 random generation (\code{rbzinb}), maximum likelihood estimation (\code{bzinb}), 
-   and log-likelihood. (\code{dbzinb})  for the bivariate zero-inflated negative binomial 
+   and log-likelihood. (\code{lik.bzinb})  for the bivariate zero-inflated negative binomial 
    distribution with parameters equal to \code{(a0, a1, a2, b1, b2, p1, p2, p3, p4)}.
 }
 \examples{
