@@ -64,10 +64,18 @@ dbzinb.vec <- Vectorize(dbzinb)
 #'
 #'  }
 #'  
+#' @details
+#' EM theoretically guarantees higher likelihood at each iteration than that of previous iterations. 
+#' See Dempster, Laird, and Rubin (1977). This guarantee comes with an assumption that there is no numerical
+#' error in conditional likelihood maximization at each iteration. Small errors can cause decreasing likelihood 
+#' especially when the iterations reach the point of convergence. Due to this technical error, the EM continues after it reaches
+#' the maximum likelihood point (up to 100 iterations). However, the final estimate being returned is the parameter values at
+#' the maximum likelihood.
+#'  
 #' 
 #' @examples
 #' # generating a pair of random vectors
-#' set.seed(1)
+#' set.seed(2)
 #' data1 <- rbzinb(n = 20, a0 = 1, a1 = 1, a2 = 1, 
 #'                 b1 = 1, b2 = 1, p1 = 0.5, p2 = 0.2, 
 #'                 p3 = 0.2, p4 = 0.1)
@@ -83,6 +91,10 @@ dbzinb.vec <- Vectorize(dbzinb)
 #'  Cho, H., Preisser, J., Liu, C., Wu, D. (In preparation), "A bivariate 
 #'  zero-inflated negative binomial model for identifying underlying dependence"
 #' 
+#'  Dempster, A. P., Laird, N. M., & Rubin, D. B. (1977). Maximum likelihood from 
+#'  incomplete data via the EM algorithm. Journal of the Royal Statistical Society: 
+#'  Series B (Methodological), 39(1), 1-22.
+#'  
 #' @import Rcpp BH
 #' @export
 #' @useDynLib bzinb
