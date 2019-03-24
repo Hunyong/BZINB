@@ -210,13 +210,15 @@ bzinb.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=50000, s
   param = initial
   lik = -Inf
   expt = setNames(as.double(rep(0, 12)), expt.names)
+  lik.vec = rep(0, maxiter)
   # print(c(param, showFlag, iter))
-  em(param = param, xvec = xy.reduced$x, yvec = xy.reduced$y, 
+  em(param2 = param, xvec = xy.reduced$x, yvec = xy.reduced$y, 
      freq = xy.reduced$freq, n = n.reduced, expt = expt, info = info,
      se = as.integer(se), iter = as.integer(iter), 
      maxiter = as.integer(maxiter), tol = as.double(tol), 
-     showFlag = as.integer(showFlag))
-
+     showFlag = as.integer(showFlag), trajectory = lik.vec)
+  # tmp.expt <<- expt
+  # tmp.traj <<- lik.vec
   # underlying correlation (rho)
   rho <- param[1]/sqrt((param[1] + param[2]) * (param[1] + param[3])) *
     sqrt(param[4] * param[5] /(param[4] + 1) /(param[5] + 1))
