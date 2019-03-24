@@ -1,3 +1,8 @@
+##########################################################################################
+## 0. Common functions
+##########################################################################################
+
+
 #' @title Pairwise underlying correlation based on bivariate zero-inflated negative binomial (BZINB) model
 #' 
 #' @description For each pair of rows in the data, underlying corelation (\eqn{\rho}) is calculated based on
