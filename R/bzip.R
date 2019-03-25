@@ -55,7 +55,7 @@ dbzip.a.vec <- Vectorize(dbzip.a)
 #' lik.bzip.a(xvec = data1[, 1], yvec = data1[ ,2], 
 #'           m0 = 1, m1 = 1, m2 = 1, p = 0.5)
 #' 
-#' bzip.a(xvec = data1[,1], yvec = data1[,2], showFlag = F)
+#' bzip.a(xvec = data1[,1], yvec = data1[,2], showFlag = FALSE)
 #' 
 #' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
 #' @references
@@ -256,7 +256,7 @@ dbzip.b.vec <- Vectorize(dbzip.b)
 #'           m0 = 1, m1 = 1, m2 = 1, 
 #'           p1 = 0.5, p2 = 0.2, p3 = 0.2, p4 = 0.1)
 #' 
-#' bzip.b(xvec = data1[,1], yvec = data1[,2], showFlag = F)
+#' bzip.b(xvec = data1[,1], yvec = data1[,2], showFlag = FALSE)
 #' 
 #' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
 #' @references
@@ -439,49 +439,3 @@ bzip.b <- function(xvec, yvec, tol = 1e-6, initial = NULL, showFlag = FALSE, max
   }
   return(param)
 }
-
-# Comparing algorithms
-if (FALSE) {
-  tt(1)
-  bzip.b(extractor(1),extractor(2), showFlag=TRUE)   #EM (bzip.b)
-  # p1         p2          p3        p4       mu0     mu1     mu2
-  # 0.002569217 0.03868079 0.006423043 0.952327 3.272441e-09 16.72727 3.61411
-  # 1285 iterations, 2.67 mins (lik=-487.8919)
-  # lik.bzip.b(extractor(1),extractor(2), c(0.002569217, 0.03868079, 0.006423043, 0.952327, 3.272441e-09, 16.72727, 3.61411)) #-487.8919
-  tt(2)
-  
-  tt(1)
-  bzip.b(extractor(1),extractor(2), showFlag=TRUE)   #EM2 (bzip.b)
-  # p1         p2          p3        p4       mu0     mu1     mu2
-  # 0.002569209 0.03868079 0.006423021 0.952327 7.816525e-09 16.72727 3.614232
-  # 10 iterations, 2.45 mins  (lik=-487.8919)
-  #lik.bzip.b(extractor(1),extractor(2), c(0.002569209, 0.03868079, 0.006423021, 0.952327, 7.816525e-09, 16.72727, 3.614232)) #-487.8919
-  tt(2)
-  
-  tt(1)
-  bzip(extractor(1),extractor(2), showFlag=TRUE)      #EM (bzip)
-  #   p          mu0      mu1       mu2
-  # 0.9525 0.0001888937 14.52612 0.6840215
-  # 1122 iterations, 58 sec
-  tt(2)
-  
-  tt(1)
-  bzip.old(extractor(1),extractor(2), showFlag=TRUE)   #Direct maximization
-  # p          mu0      mu1       mu2
-  # 0.9525 7.699164e-09 14.52631 0.6842103
-  # 3 iterations, 0.53 sec
-  tt(2)
-}
-
-
-### xy.reduced function
-#
-# reduce <- function(xvec, yvec) {
-#   xy.reduced <- as.data.frame(table(xvec,yvec))
-#   names(xy.reduced) <- c("x", "y","freq")
-#   xy.reduced <- xy.reduced[xy.reduced$freq != 0,]
-#   xy.reduced$x <- as.numeric(as.character(xy.reduced$x))
-#   xy.reduced$y <- as.numeric(as.character(xy.reduced$y))
-#   xy.reduced$freq <- as.numeric(as.character(xy.reduced$freq))
-#   return(xy.reduced)
-# }

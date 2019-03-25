@@ -13,7 +13,7 @@ idigamma(y)
 inverse of digamma. digamma function is the first derivative of gamma function divided by gamma function.
 }
 \examples{
-idgamma(2)
+idigamma(2)
 plot(digamma, 0.1, 3)
 plot(idigamma, -10.4, 0.9)
 

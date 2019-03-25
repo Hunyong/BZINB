@@ -84,7 +84,7 @@ dbzinb.vec <- Vectorize(dbzinb)
 #'           a0 = 1, a1 = 1, a2 = 1, b1 = 1, b2 = 1, 
 #'           p1 = 0.5, p2 = 0.2, p3 = 0.2, p4 = 0.1)
 #' 
-#' bzinb(xvec = data1[,1], yvec = data1[,2], showFlag = F)
+#' bzinb(xvec = data1[,1], yvec = data1[,2], showFlag = FALSE)
 #' 
 #' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
 #' @references
@@ -340,7 +340,7 @@ bzinb <- function(xvec, yvec, initial = NULL, tol = 1e-8, maxiter = 50000, showF
 #' 
 #' @param y a numeric vector.
 #' @examples 
-#' idgamma(2)
+#' idigamma(2)
 #' plot(digamma, 0.1, 3)
 #' plot(idigamma, -10.4, 0.9)
 #' 

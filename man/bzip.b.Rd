@@ -64,7 +64,7 @@ lik.bzip.b(xvec = data1[, 1], yvec = data1[ ,2],
           m0 = 1, m1 = 1, m2 = 1, 
           p1 = 0.5, p2 = 0.2, p3 = 0.2, p4 = 0.1)
 
-bzip.b(xvec = data1[,1], yvec = data1[,2], showFlag = F)
+bzip.b(xvec = data1[,1], yvec = data1[,2], showFlag = FALSE)
 
 }
 \references{

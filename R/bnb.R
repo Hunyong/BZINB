@@ -68,7 +68,7 @@ dbnb.vec <- Vectorize(dbnb)
 #' lik.bnb(xvec = data1[, 1], yvec = data1[ ,2], 
 #'           a0 = 1, a1 = 1, a2 = 1, b1 = 1, b2 = 1) 
 #' 
-#' bnb(xvec = data1[,1], yvec = data1[,2], showFlag = F)
+#' bnb(xvec = data1[,1], yvec = data1[,2], showFlag = FALSE)
 #' 
 #' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
 #' @references

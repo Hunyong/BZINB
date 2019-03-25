@@ -55,7 +55,7 @@ data1 <- rbzip.a(n = 20, m0 = 1, m1 = 1, m2 = 1, p = 0.5)
 lik.bzip.a(xvec = data1[, 1], yvec = data1[ ,2], 
           m0 = 1, m1 = 1, m2 = 1, p = 0.5)
 
-bzip.a(xvec = data1[,1], yvec = data1[,2], showFlag = F)
+bzip.a(xvec = data1[,1], yvec = data1[,2], showFlag = FALSE)
 
 }
 \references{

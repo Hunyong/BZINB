@@ -86,7 +86,7 @@ lik.bzinb(xvec = data1[, 1], yvec = data1[ ,2],
           a0 = 1, a1 = 1, a2 = 1, b1 = 1, b2 = 1, 
           p1 = 0.5, p2 = 0.2, p3 = 0.2, p4 = 0.1)
 
-bzinb(xvec = data1[,1], yvec = data1[,2], showFlag = F)
+bzinb(xvec = data1[,1], yvec = data1[,2], showFlag = FALSE)
 
 }
 \references{
