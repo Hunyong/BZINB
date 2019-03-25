@@ -70,7 +70,7 @@ dbnb.vec <- Vectorize(dbnb)
 #' 
 #' bnb(xvec = data1[,1], yvec = data1[,2], showFlag = F)
 #' 
-#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park
+#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
 #' @references
 #'  Cho, H., Preisser, J., Liu, C., Wu, D. (In preparation), "A bivariate 
 #'  zero-inflated negative binomial model for identifying underlying dependence"

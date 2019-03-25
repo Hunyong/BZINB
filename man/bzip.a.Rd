@@ -66,5 +66,5 @@ Cho, H., Preisser, J., Liu, C., Wu, D. (In preparation), "A bivariate
  Multivariate zero-inflated Poisson models and their applications. Technometrics, 41, 29-38.
 }
 \author{
-Hunyong Cho, Chuwen Liu, Jinyoung Park
+Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
 }

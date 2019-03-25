@@ -62,5 +62,5 @@ Cho, H., Preisser, J., Liu, C., Wu, D. (In preparation), "A bivariate
  zero-inflated negative binomial model for identifying underlying dependence"
 }
 \author{
-Hunyong Cho, Chuwen Liu, Jinyoung Park
+Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
 }

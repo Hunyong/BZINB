@@ -43,7 +43,7 @@
 #' data3 <- t(cbind(data1, data2))
 #' pairwise.bzinb(data3, showFlag = TRUE)
 #' 
-#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park
+#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
 #' @references 
 #'  Cho, H., Preisser, J., Liu, C., Wu, D. (In preparation), "A bivariate 
 #'  zero-inflated negative binomial model for identifying underlying dependence"

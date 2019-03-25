@@ -55,5 +55,5 @@ Cho, H., Preisser, J., Liu, C., Wu, D. (In preparation), "A bivariate
  Kocherlakota, S. & Kocherlakota, K. (1992). Bivariate Discrete Distributions. New York: Marcel Dekker.
 }
 \author{
-Hunyong Cho, Chuwen Liu, Jinyoung Park
+Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
 }

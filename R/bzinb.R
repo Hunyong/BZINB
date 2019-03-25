@@ -86,7 +86,7 @@ dbzinb.vec <- Vectorize(dbzinb)
 #' 
 #' bzinb(xvec = data1[,1], yvec = data1[,2], showFlag = F)
 #' 
-#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park
+#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
 #' @references
 #'  Cho, H., Preisser, J., Liu, C., Wu, D. (In preparation), "A bivariate 
 #'  zero-inflated negative binomial model for identifying underlying dependence"
@@ -344,7 +344,7 @@ bzinb <- function(xvec, yvec, initial = NULL, tol = 1e-8, maxiter = 50000, showF
 #' plot(digamma, 0.1, 3)
 #' plot(idigamma, -10.4, 0.9)
 #' 
-#' @author Hunyong Cho
+#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
 #' 
 #' @export
 idigamma <- function(y) {
@@ -387,7 +387,7 @@ idigamma <- function(y) {
 #'          param = c(5.5, 0.017, 0.017, 0.33, 0.36, 
 #'                    0.53, 0.30, 0.08, 0.09))
 #' 
-#' @author Hunyong Cho, Chuwen Liu
+#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
 #' @references 
 #'  Cho, H., Preisser, J., Liu, C., Wu, D. (In preparation), "A bivariate 
 #'  zero-inflated negative binomial model for identifying underlying dependence"
