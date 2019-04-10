@@ -32,23 +32,26 @@
 #'  }
 #'  
 #' @examples
-#' # generating a pair of random vectors
-#' set.seed(2)
-#' data1 <- rbzinb(n = 20, a0 = 1, a1 = 1, a2 = 1, 
+#' # generating four random vectors
+#' set.seed(7)
+#' data1 <- rbzinb(n = 20, a0 = 0.5, a1 = 1, a2 = 1, 
 #'                 b1 = 1, b2 = 1, p1 = 0.5, p2 = 0.2, 
 #'                 p3 = 0.2, p4 = 0.1)
-#' data2 <- rbzinb(n = 20, a0 = 1, a1 = 1, a2 = 1, 
-#'                 b1 = 1, b2 = 1, p1 = 0.5, p2 = 0.2, 
+#' set.seed(14)
+#' data2 <- rbzinb(n = 20, a0 = 0.5, a1 = 1, a2 = 1, 
+#'                 b1 = 2, b2 = 2, p1 = 0.5, p2 = 0.2, 
 #'                 p3 = 0.2, p4 = 0.1)
 #' data3 <- t(cbind(data1, data2))
-#' pairwise.bzinb(data3, showFlag = TRUE)
 #' 
-#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
+#' # calculating all pairwise underlying correlations
+#' \dontrun{pairwise.bzinb(data3, showFlag = TRUE)}
+#' 
+#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, and Di Wu
 #' @references 
-#'  Cho, H., Preisser, J., Liu, C., Wu, D. (In preparation), "A bivariate 
+#'  Cho, H., Liu, C., Preisser, J., and Wu, D. (In preparation), "A bivariate 
 #'  zero-inflated negative binomial model for identifying underlying dependence"
 #' 
-#' @import Rcpp BH
+#' @import Rcpp
 #' @export
 #' 
 pairwise.bzinb <- function(data, nonzero.prop = TRUE, fullParam = FALSE, 
@@ -76,9 +79,9 @@ pairwise.bzinb <- function(data, nonzero.prop = TRUE, fullParam = FALSE,
     y <- data[s[2], ]
     result <- bzinb(xvec = x, yvec = y, ...)
     
-    if (showFlag) cat("pair ", s[1], "-", s[2], ": ", "(rho, se.rho) = (", 
-                      formatC(result$rho[1,1], digits = 5, format = "f", flag = "0"), ", ", 
-                      formatC(result$rho[1,2], digits = 5, format = "f", flag = "0"), ")\n")
+    if (showFlag) message("pair ", s[1], "-", s[2], ": ", "(rho, se.rho) = (", 
+                          formatC(result$rho[1,1], digits = 5, format = "f", flag = "0"), ", ", 
+                          formatC(result$rho[1,2], digits = 5, format = "f", flag = "0"), ")\n")
     result2 <- c(rho = result$rho["rho", "Estimate"], 
                  se.rho = result$rho["rho", "Std.err"],
                  if (fullParam) result$coefficients[, "Estimate"],  

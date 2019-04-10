@@ -1,14 +1,18 @@
+// [[Rcpp::depends(BH)]]
 #include <Rcpp.h>
 #include <iostream>
 #include <math.h>
 #include <numeric>
+#include <vector>
 #include <string>
 #include "bzinb.h"
 #include <boost/math/special_functions/digamma.hpp>
 #include <boost/math/special_functions/trigamma.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/io.hpp>
 using namespace std;
 using namespace Rcpp;
-// [[Rcpp::depends(BH)]]
+using namespace boost::numeric::ublas;
 
 // 1. Expt
 void l1(int& x, int& y, long double& a0, long double& a1, long double& a2, int &k, int& m, 
@@ -106,22 +110,33 @@ void dBvZINB_Expt(int &x, int &y, int &freq, long double &a0, long double &a1, l
   long double l4_B = ((x+y!=0)?0.0:( p4 * exp(adj_B1)));
   
   long double sum_A = 0, sum_C = 0, sum_AC = 0;
-  
-  long double R0_mat[x+1][y+1], R1_mat[x+1][y+1], R2_mat[x+1][y+1], log_R0_mat[x+1][y+1]; 
-  long double log_R1_mat[x+1][y+1], log_R2_mat[x+1][y+1], log_R0_mat2[x+1], log_R0_mat3[y+1];
-  long double l_A_mat[x+1][y+1], l2_A_mat[x+1], l3_A_mat[y+1];
-  long double log_R1_mat2[x+1], log_R2_mat2[x+1], log_R1_mat3[y+1], log_R2_mat3[y+1];
-  long double l_C_mat[x+1][y+1], l_AC_mat[x+1][y+1];
+  matrix <long double> R0_mat(x+1, y+1); 
+  matrix <long double> R1_mat(x+1, y+1); 
+  matrix <long double> R2_mat(x+1, y+1); 
+  matrix <long double> log_R0_mat(x+1, y+1); 
+  matrix <long double> log_R1_mat(x+1, y+1); 
+  matrix <long double> log_R2_mat(x+1, y+1);
+  matrix <long double> l_A_mat(x+1, y+1); 
+  matrix <long double> l_C_mat(x+1, y+1); 
+  matrix <long double> l_AC_mat(x+1, y+1); 
+  std::vector <long double> log_R0_mat2(x+1); 
+  std::vector <long double> log_R0_mat3(y+1); 
+  std::vector <long double> l2_A_mat(x+1); 
+  std::vector <long double> l3_A_mat(y+1);
+  std::vector <long double> log_R1_mat2(x+1); 
+  std::vector <long double> log_R2_mat2(x+1); 
+  std::vector <long double> log_R1_mat3(y+1); 
+  std::vector <long double> log_R2_mat3(y+1);
   
   for(int i = 0;i <= x;i++)
   {
     for(int j = 0;j <= y;j++)
     {
-      l1(x, y, a0, a1, a2, i, j, l_A_mat[i][j], adj_A);  // updating l_A_mat[i][j]
-      l1_c(t1, t2, i, j, l_C_mat[i][j], adj_C);
-      sum_A += l_A_mat[i][j];
-      sum_C += l_C_mat[i][j];
-      //cout << i <<" "<<j<<" "<< l_A_mat[i][j] << endl;
+      l1(x, y, a0, a1, a2, i, j, l_A_mat(i, j), adj_A);  // updating l_A_mat(i, j)
+      l1_c(t1, t2, i, j, l_C_mat(i, j), adj_C);
+      sum_A += l_A_mat(i, j);
+      sum_C += l_C_mat(i, j);
+      //cout << i <<" "<<j<<" "<< l_A_mat(i, j) << endl;
       //system("pause");
     }
   }
@@ -143,8 +158,8 @@ void dBvZINB_Expt(int &x, int &y, int &freq, long double &a0, long double &a1, l
     {
       for(int j = 0;j <= y;j++)
       {
-        l1(x, y, a0, a1, a2, i, j, l_A_mat[i][j], adj_A);
-        sum_A += l_A_mat[i][j];
+        l1(x, y, a0, a1, a2, i, j, l_A_mat(i, j), adj_A);
+        sum_A += l_A_mat(i, j);
       }
     }
   }
@@ -164,8 +179,8 @@ void dBvZINB_Expt(int &x, int &y, int &freq, long double &a0, long double &a1, l
     {
       for(int j = 0;j <= y;j++)
       {
-        l1_c(t1, t2, i, j, l_C_mat[i][j], adj_C); //update l_C_mat[i][j] 
-        sum_C += l_C_mat[i][j];
+        l1_c(t1, t2, i, j, l_C_mat(i, j), adj_C); //update l_C_mat(i, j) 
+        sum_C += l_C_mat(i, j);
       }
     }
   }
@@ -175,8 +190,8 @@ void dBvZINB_Expt(int &x, int &y, int &freq, long double &a0, long double &a1, l
   {
     for(int j = 0;j <= y;j++)
     {
-      sum_AC += l_A_mat[i][j]*l_C_mat[i][j]; //code simplified;
-      sum_A += l_A_mat[i][j];                //code missed;
+      sum_AC += l_A_mat(i, j)*l_C_mat(i, j); //code simplified;
+      sum_A += l_A_mat(i, j);                //code missed;
     }
   }
   if(log(sum_AC) > 200)
@@ -189,10 +204,10 @@ void dBvZINB_Expt(int &x, int &y, int &freq, long double &a0, long double &a1, l
     {
       for(int j = 0;j <= y;j++)
       {
-        l1(x, y, a0, a1, a2, i, j, l_A_mat[i][j], adj_A); //update l_A_mat[i][j]
-        l1_c(t1, t2, i, j, l_C_mat[i][j], adj_C); //update l_C_mat[i][j] 
-        sum_AC += l_A_mat[i][j]*l_C_mat[i][j];
-        sum_A +=  l_A_mat[i][j];
+        l1(x, y, a0, a1, a2, i, j, l_A_mat(i, j), adj_A); //update l_A_mat(i, j)
+        l1_c(t1, t2, i, j, l_C_mat(i, j), adj_C); //update l_C_mat(i, j) 
+        sum_AC += l_A_mat(i, j)*l_C_mat(i, j);
+        sum_A +=  l_A_mat(i, j);
       }
     }
   }
@@ -206,11 +221,11 @@ void dBvZINB_Expt(int &x, int &y, int &freq, long double &a0, long double &a1, l
     {
       for(int j = 0;j <= y;j++)
       {
-        l1(x, y, a0, a1, a2, i, j, l_A_mat[i][j], adj_A);  // update l_A_mat[i][j]
-        l1_c(t1, t2, i, j, l_C_mat[i][j], adj_C); //update l_C_mat[i][j] 
-        l1_AC(t1, t2, x, y, a0, a1, a2, i, j, l_AC_mat[i][j], adj_A+adj_C);  // update l1_AC
-        sum_AC += l_AC_mat[i][j];
-        sum_A +=  l_A_mat[i][j];
+        l1(x, y, a0, a1, a2, i, j, l_A_mat(i, j), adj_A);  // update l_A_mat(i, j)
+        l1_c(t1, t2, i, j, l_C_mat(i, j), adj_C); //update l_C_mat(i, j) 
+        l1_AC(t1, t2, x, y, a0, a1, a2, i, j, l_AC_mat(i, j), adj_A+adj_C);  // update l1_AC
+        sum_AC += l_AC_mat(i, j);
+        sum_A +=  l_A_mat(i, j);
       }
     }
   }
@@ -252,25 +267,25 @@ void dBvZINB_Expt(int &x, int &y, int &freq, long double &a0, long double &a1, l
     log_R2_mat2[i] = l2_A_mat[i] * (boost::math::digamma(a2) + log(R2_E2_B));
     for(int j = 0;j <= y;j++)
     {
-      R0_E1(x, y, i, j, a0, R0_mat[i][j]);  //update R0_mat[i][j]
-      R0_mat[i][j] = R0_mat[i][j]*l_A_mat[i][j];
-      R0_E += R0_mat[i][j] * l_C_mat[i][j] * exp(adj_sum) * l1_B * R0_E1_B + R0_mat[i][j] * (l2_B * R0_E2_B + l3_B * R0_E3_B + l4_B * R0_E4_B)*exp(-adj_C + adj_sum);
-      R1_E1(i, a1, R1_mat[i][j]);  //update R1_mat[i][j]
-      R2_E1(j, a2, R2_mat[i][j]);  //update R2_mat[i][j]
-      R1_mat[i][j] *= l_A_mat[i][j];
-      R2_mat[i][j] *= l_A_mat[i][j];
-      log_R0_mat[i][j] = (log_R0_E1(x, y, i, j, a0) + log(R0_E1_B)) * l_A_mat[i][j];
-      log_R1_mat[i][j] = l_A_mat[i][j] * (log_R1_E1(i,a1) + log (R1_E1_B));
-      log_R2_mat[i][j] = (log_R2_E1(j,a2) + log(R2_E1_B)) * l_A_mat[i][j];
-      //cout << "line252; log_R1_mat[i][j]: " << log_R1_mat[i][j] << ", (log_R1_E1(i,a1) + log (R1_E1_B)): " << (log_R1_E1(i,a1) + log (R1_E1_B)) << ", log_R1_E1(i,a1):" << log_R1_E1(i,a1) << ", log (R1_E1_B): " << log (R1_E1_B) <<endl;
-      log_R0_E += log_R0_mat[i][j] * l_C_mat[i][j] * exp(adj_sum - adj_C) * l1_B;
+      R0_E1(x, y, i, j, a0, R0_mat(i, j));  //update R0_mat(i, j)
+      R0_mat(i, j) = R0_mat(i, j)*l_A_mat(i, j);
+      R0_E += R0_mat(i, j) * l_C_mat(i, j) * exp(adj_sum) * l1_B * R0_E1_B + R0_mat(i, j) * (l2_B * R0_E2_B + l3_B * R0_E3_B + l4_B * R0_E4_B)*exp(-adj_C + adj_sum);
+      R1_E1(i, a1, R1_mat(i, j));  //update R1_mat(i, j)
+      R2_E1(j, a2, R2_mat(i, j));  //update R2_mat(i, j)
+      R1_mat(i, j) *= l_A_mat(i, j);
+      R2_mat(i, j) *= l_A_mat(i, j);
+      log_R0_mat(i, j) = (log_R0_E1(x, y, i, j, a0) + log(R0_E1_B)) * l_A_mat(i, j);
+      log_R1_mat(i, j) = l_A_mat(i, j) * (log_R1_E1(i,a1) + log (R1_E1_B));
+      log_R2_mat(i, j) = (log_R2_E1(j,a2) + log(R2_E1_B)) * l_A_mat(i, j);
+      //cout << "line252; log_R1_mat(i, j): " << log_R1_mat(i, j) << ", (log_R1_E1(i,a1) + log (R1_E1_B)): " << (log_R1_E1(i,a1) + log (R1_E1_B)) << ", log_R1_E1(i,a1):" << log_R1_E1(i,a1) << ", log (R1_E1_B): " << log (R1_E1_B) <<endl;
+      log_R0_E += log_R0_mat(i, j) * l_C_mat(i, j) * exp(adj_sum - adj_C) * l1_B;
       //cout << "i = " << i << ", j = " << j << ", logR0E = " << log_R0_E << " " << endl;
-      log_R1_E += log_R1_mat[i][j] * l_C_mat[i][j] * exp(adj_sum - adj_C) * l1_B;
+      log_R1_E += log_R1_mat(i, j) * l_C_mat(i, j) * exp(adj_sum - adj_C) * l1_B;
       //cout << "line257; sum = " << log_R1_mat[i][0] * l_C_mat[i][0] * exp(adj_sum - adj_C) * l1_B << ", lCmat: " <<l_C_mat[i][0] << ", l1B: " << l1_B <<endl;
       //cout << "line257; log_R1_E = " << log_R1_E << endl;
-      log_R2_E += log_R2_mat[i][j] * l_C_mat[i][j] * exp(adj_sum - adj_C) * l1_B;
-      R1_E += R1_mat[i][j] * l_C_mat[i][j] * exp(adj_sum) * l1_B * R1_E1_B + R1_mat[i][j] * (l2_B * R1_E2_B + l3_B * R1_E3_B + l4_B * R1_E4_B)*exp(-adj_C + adj_sum);
-      R2_E += R2_mat[i][j] * l_C_mat[i][j] * exp(adj_sum) * l1_B * R2_E1_B + R2_mat[i][j] * (l2_B * R2_E2_B + l3_B * R2_E3_B + l4_B * R2_E4_B)*exp(-adj_C + adj_sum);
+      log_R2_E += log_R2_mat(i, j) * l_C_mat(i, j) * exp(adj_sum - adj_C) * l1_B;
+      R1_E += R1_mat(i, j) * l_C_mat(i, j) * exp(adj_sum) * l1_B * R1_E1_B + R1_mat(i, j) * (l2_B * R1_E2_B + l3_B * R1_E3_B + l4_B * R1_E4_B)*exp(-adj_C + adj_sum);
+      R2_E += R2_mat(i, j) * l_C_mat(i, j) * exp(adj_sum) * l1_B * R2_E1_B + R2_mat(i, j) * (l2_B * R2_E2_B + l3_B * R2_E3_B + l4_B * R2_E4_B)*exp(-adj_C + adj_sum);
     }
     log_R0_E += (log_R0_mat2[i] * l2_B) * exp(adj_sum);
     //cout << "line262; log_R1_E(cum1) = " << log_R1_E << ", line sum = " << (log_R1_mat2[i] * l2_B) * exp(adj_sum) << "log_R1_E(cum2) = " << log_R1_E + (log_R1_mat2[i] * l2_B) * exp(adj_sum) << endl;
@@ -349,12 +364,12 @@ void dBvZINB_Expt(int &x, int &y, int &freq, long double &a0, long double &a1, l
     // part I (functional components only)
     for (int i = 0; i <= x; i++) {
       for (int j = 0; j <= y; j++) {
-        Dvec[0] += l_A_mat[i][j] * exp(adj_sum) * l_C_mat[i][j] * boost::math::digamma(x - i + y - j + a0);
-//cout << "elements["  << i << "]["<< j << "]: "  << l_A_mat[i][j] * exp(adj_sum) * l_C_mat[i][j] * boost::math::digamma(x - i + y - j + a0) << endl;
-        Dvec[1] += l_A_mat[i][j] * exp(adj_sum) * l_C_mat[i][j] * boost::math::digamma(a1 + i);
-        Dvec[2] += l_A_mat[i][j] * exp(adj_sum) * l_C_mat[i][j] * boost::math::digamma(a2 + j);
-        Dvec[3] += l_A_mat[i][j] * exp(adj_sum) * l_C_mat[i][j] * (x/b1 - (x + y - i - j + a0) / (b1 + b2 + 1) - (a1 + i)/(b1 + 1));
-        Dvec[4] += l_A_mat[i][j] * exp(adj_sum) * l_C_mat[i][j] * (y/b2 - (x + y - i - j + a0) / (b1 + b2 + 1) - (a2 + j)/(b2 + 1));
+        Dvec[0] += l_A_mat(i, j) * exp(adj_sum) * l_C_mat(i, j) * boost::math::digamma(x - i + y - j + a0);
+//cout << "elements["  << i << "]["<< j << "]: "  << l_A_mat(i, j) * exp(adj_sum) * l_C_mat(i, j) * boost::math::digamma(x - i + y - j + a0) << endl;
+        Dvec[1] += l_A_mat(i, j) * exp(adj_sum) * l_C_mat(i, j) * boost::math::digamma(a1 + i);
+        Dvec[2] += l_A_mat(i, j) * exp(adj_sum) * l_C_mat(i, j) * boost::math::digamma(a2 + j);
+        Dvec[3] += l_A_mat(i, j) * exp(adj_sum) * l_C_mat(i, j) * (x/b1 - (x + y - i - j + a0) / (b1 + b2 + 1) - (a1 + i)/(b1 + 1));
+        Dvec[4] += l_A_mat(i, j) * exp(adj_sum) * l_C_mat(i, j) * (y/b2 - (x + y - i - j + a0) / (b1 + b2 + 1) - (a2 + j)/(b2 + 1));
       }
     }
 //cout << "Dvec (line 343): " << Dvec[0] << endl; 

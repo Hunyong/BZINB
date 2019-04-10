@@ -6,8 +6,8 @@
 using namespace Rcpp;
 
 // em
-void em(NumericVector& param2, const IntegerVector& xvec, const IntegerVector& yvec, const IntegerVector& freq, const int& n, NumericVector& expt, NumericVector& info, const int& se, IntegerVector& iter, int& maxiter, double& tol, int showFlag, NumericVector& trajectory);
-RcppExport SEXP _bzinb_em(SEXP param2SEXP, SEXP xvecSEXP, SEXP yvecSEXP, SEXP freqSEXP, SEXP nSEXP, SEXP exptSEXP, SEXP infoSEXP, SEXP seSEXP, SEXP iterSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP showFlagSEXP, SEXP trajectorySEXP) {
+void em(NumericVector& param2, const IntegerVector& xvec, const IntegerVector& yvec, const IntegerVector& freq, const int& n, NumericVector& expt, NumericVector& info, const int& se, IntegerVector& iter, int& maxiter, double& tol, int showFlag, IntegerVector& nonconv, NumericVector& trajectory);
+RcppExport SEXP _bzinb_em(SEXP param2SEXP, SEXP xvecSEXP, SEXP yvecSEXP, SEXP freqSEXP, SEXP nSEXP, SEXP exptSEXP, SEXP infoSEXP, SEXP seSEXP, SEXP iterSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP showFlagSEXP, SEXP nonconvSEXP, SEXP trajectorySEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector& >::type param2(param2SEXP);
@@ -22,8 +22,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int& >::type maxiter(maxiterSEXP);
     Rcpp::traits::input_parameter< double& >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< int >::type showFlag(showFlagSEXP);
+    Rcpp::traits::input_parameter< IntegerVector& >::type nonconv(nonconvSEXP);
     Rcpp::traits::input_parameter< NumericVector& >::type trajectory(trajectorySEXP);
-    em(param2, xvec, yvec, freq, n, expt, info, se, iter, maxiter, tol, showFlag, trajectory);
+    em(param2, xvec, yvec, freq, n, expt, info, se, iter, maxiter, tol, showFlag, nonconv, trajectory);
     return R_NilValue;
 END_RCPP
 }
@@ -92,7 +93,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_bzinb_em", (DL_FUNC) &_bzinb_em, 13},
+    {"_bzinb_em", (DL_FUNC) &_bzinb_em, 14},
     {"_bzinb_dBvZINB_Expt", (DL_FUNC) &_bzinb_dBvZINB_Expt, 16},
     {"_bzinb_dBvZINB_Expt_vec", (DL_FUNC) &_bzinb_dBvZINB_Expt_vec, 17},
     {"_bzinb_inv_digamma", (DL_FUNC) &_bzinb_inv_digamma, 2},

@@ -50,6 +50,6 @@ void opt_lb(long double lb[1], Rcpp::NumericVector &expt, long double a[3],
 void em(Rcpp::NumericVector& param2, const Rcpp::IntegerVector &xvec, const Rcpp::IntegerVector &yvec, 
         const Rcpp::IntegerVector &freq, const int &n, Rcpp::NumericVector &expt, Rcpp::NumericVector &info,
         const int &se, Rcpp::IntegerVector &iter, int &maxiter, double &tol, int showFlag, 
-        Rcpp::NumericVector trajectory);
+        Rcpp::IntegerVector &nonconv, Rcpp::NumericVector trajectory);
 
 #endif

@@ -59,12 +59,12 @@ bzip.a(xvec = data1[,1], yvec = data1[,2], showFlag = FALSE)
 
 }
 \references{
-Cho, H., Preisser, J., Liu, C., Wu, D. (In preparation), "A bivariate 
+Cho, H., Liu, C., Preisser, J., and Wu, D. (In preparation), "A bivariate 
  zero-inflated negative binomial model for identifying underlying dependence"
 
  Li, C. S., Lu, J. C., Park, J., Kim, K., Brinkley, P. A., & Peterson, J. P. (1999). 
  Multivariate zero-inflated Poisson models and their applications. Technometrics, 41, 29-38.
 }
 \author{
-Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
+Hunyong Cho, Chuwen Liu, Jinyoung Park, and Di Wu
 }

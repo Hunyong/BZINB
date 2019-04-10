@@ -58,9 +58,9 @@ bnb(xvec = data1[,1], yvec = data1[,2], showFlag = FALSE)
 
 }
 \references{
-Cho, H., Preisser, J., Liu, C., Wu, D. (In preparation), "A bivariate 
+Cho, H., Liu, C., Preisser, J., and Wu, D. (In preparation), "A bivariate 
  zero-inflated negative binomial model for identifying underlying dependence"
 }
 \author{
-Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
+Hunyong Cho, Chuwen Liu, Jinyoung Park, and Di Wu
 }

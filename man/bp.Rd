@@ -16,9 +16,11 @@ bp(xvec, yvec, tol = 1e-06)
 \item{xvec, yvec}{a pair of bp random vectors. nonnegative integer vectors. 
 If not integers, they will be rounded to the nearest integers.}
 
+\item{m0, m1, m2}{mean parameters of the Poisson variables. They must be positive.}
+
 \item{param}{a vector of parameters (\code{(m0, m1, m2)}). 
 Either \code{param} or individual parameters (\code{m0, m1, m2}) 
-need to be provided.#' @param m0,m1,m2 mean parameters of the Poisson variables. must be positive.}
+need to be provided.}
 
 \item{n}{number of observations.}
 
@@ -49,11 +51,11 @@ bp(xvec = data1[,1], yvec = data1[,2])
 
 }
 \references{
-Cho, H., Preisser, J., Liu, C., Wu, D. (In preparation), "A bivariate 
+Cho, H., Liu, C., Preisser, J., and Wu, D. (In preparation), "A bivariate 
  zero-inflated negative binomial model for identifying underlying dependence"
 
  Kocherlakota, S. & Kocherlakota, K. (1992). Bivariate Discrete Distributions. New York: Marcel Dekker.
 }
 \author{
-Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
+Hunyong Cho, Chuwen Liu, Jinyoung Park, and Di Wu
 }

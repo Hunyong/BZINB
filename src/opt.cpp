@@ -1,3 +1,4 @@
+// [[Rcpp::depends(BH)]]
 #include <Rcpp.h>
 #include <iostream>
 #include <math.h>
@@ -8,7 +9,6 @@
 #include <boost/math/special_functions/trigamma.hpp>
 using namespace std;
 using namespace Rcpp;
-// [[Rcpp::depends(BH)]]
 
 #define EPSILON1 1e-9  //for inverse-gamma
 #define EPSILON2 1e-9  //for M-step
@@ -106,7 +106,7 @@ void opt_lb(long double lb[1], NumericVector &expt, long double a[3], long doubl
 #ifdef DEBUG3
   Rcout << "opt_iter = 1 ";  
 #endif
-  while (fabs(h) >= EPSILON2 & i < 11)  //sometimes h oscilliates around zero 
+  while ((fabs(h) >= EPSILON2) & (i < 11))  //sometimes h oscilliates around zero 
                 // (usually close to solution with only a few iterations, as the initial value is close to truth.)
                 // See p.10 of http://mathfaculty.fullerton.edu/mathews//n2003/newtonsmethod/Newton'sMethodProof.pdf
   {

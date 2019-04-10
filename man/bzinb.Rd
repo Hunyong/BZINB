@@ -17,9 +17,9 @@ bzinb(xvec, yvec, initial = NULL, tol = 1e-08, maxiter = 50000,
 \item{xvec, yvec}{a pair of bzinb random vectors. nonnegative integer vectors. 
 If not integers, they will be rounded to the nearest integers.}
 
-\item{a0, a1, a2}{shape parameters of the latent gamma variables. must be positive.}
+\item{a0, a1, a2}{shape parameters of the latent gamma variables. They must be positive.}
 
-\item{b1, b2}{scale parameters for the latent gamma variables. must be positive.}
+\item{b1, b2}{scale parameters for the latent gamma variables. They must be positive.}
 
 \item{p1, p2, p3, p4}{proportions summing up to 1 (\code{p1 + p2 + p3 + p4 = 1}). 
 \code{p1} is the probability of both latent Poisson variables being observed. 
@@ -90,7 +90,7 @@ bzinb(xvec = data1[,1], yvec = data1[,2], showFlag = FALSE)
 
 }
 \references{
-Cho, H., Preisser, J., Liu, C., Wu, D. (In preparation), "A bivariate 
+Cho, H., Preisser, J., Liu, C., and Wu, D. (In preparation), "A bivariate 
  zero-inflated negative binomial model for identifying underlying dependence"
 
  Dempster, A. P., Laird, N. M., & Rubin, D. B. (1977). Maximum likelihood from 
@@ -98,5 +98,5 @@ Cho, H., Preisser, J., Liu, C., Wu, D. (In preparation), "A bivariate
  Series B (Methodological), 39(1), 1-22.
 }
 \author{
-Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
+Hunyong Cho, Chuwen Liu, Jinyoung Park, and Di Wu
 }

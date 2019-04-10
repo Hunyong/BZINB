@@ -3,7 +3,7 @@
 ##########################################################################################
 
 
-#' @import Rcpp BH
+#' @import Rcpp
 
 dbp <- function(x, y, m0, m1, m2, log = FALSE, max = 500) {
   # max = 500: when counts exceed the max, p = 0
@@ -11,7 +11,6 @@ dbp <- function(x, y, m0, m1, m2, log = FALSE, max = 500) {
     if ((x - y) %*% (m1 - m2) >= 0) {
       m <- min(x,y); s <- x + y - 2*m; mm <- max(m1, m2)
       result <- dpois (m, m0) * dpois (s, mm)
-      # print(c("m", m, "s", s, "mm", mm, "result", result))
     } else { result <- 0 }
     if (log) {result <- log(result)}
     return(result)
@@ -49,7 +48,8 @@ dbp.vec <- Vectorize(dbp)
 #'    If not integers, they will be rounded to the nearest integers.
 #' @param param a vector of parameters (\code{(m0, m1, m2)}). 
 #'    Either \code{param} or individual parameters (\code{m0, m1, m2}) 
-#'    need to be provided.#' @param m0,m1,m2 mean parameters of the Poisson variables. must be positive.
+#'    need to be provided.
+#' @param m0,m1,m2 mean parameters of the Poisson variables. They must be positive.
 #' @param n number of observations.
 #' @param tol tolerance for judging convergence. \code{tol = 1e-8} by default.
 #' 
@@ -72,14 +72,14 @@ dbp.vec <- Vectorize(dbp)
 #' 
 #' bp(xvec = data1[,1], yvec = data1[,2])
 #' 
-#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
+#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, and Di Wu
 #' @references
-#'  Cho, H., Preisser, J., Liu, C., Wu, D. (In preparation), "A bivariate 
+#'  Cho, H., Liu, C., Preisser, J., and Wu, D. (In preparation), "A bivariate 
 #'  zero-inflated negative binomial model for identifying underlying dependence"
 #' 
 #'  Kocherlakota, S. & Kocherlakota, K. (1992). Bivariate Discrete Distributions. New York: Marcel Dekker.
 #'  
-#' @import Rcpp BH
+#' @import Rcpp
 #' @export
 lik.bp <- function(xvec, yvec, m0, m1, m2, param=NULL) {
   if (!is.null(param)) {

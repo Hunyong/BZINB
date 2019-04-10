@@ -12,6 +12,16 @@ bzinb.se(xvec, yvec, a0, a1, a2, b1, b2, p1, p2, p3, p4, param = NULL,
 \item{xvec, yvec}{a pair of bzinb random vectors. nonnegative integer vectors. 
 If not integers, they will be rounded to the nearest integers.}
 
+\item{a0, a1, a2}{shape parameters of the latent gamma variables. They must be positive.}
+
+\item{b1, b2}{scale parameters for the latent gamma variables. They must be positive.}
+
+\item{p1, p2, p3, p4}{proportions summing up to 1 (\code{p1 + p2 + p3 + p4 = 1}). 
+\code{p1} is the probability of both latent Poisson variables being observed. 
+\code{p2} is the probability of only the first Poisson variables being observed.
+\code{p3} is the probability of only the second Poisson variables being observed, and
+\code{p4} is the probability of both Poisson variables being dropped out.}
+
 \item{param}{a vector of parameters (\code{(a0, a1, a2, b1, b2, p1, p2, p3, p4)}). 
 See \code{\link{bzinb}} for more detail.}
 
@@ -40,9 +50,9 @@ bzinb.se(xvec = data1[,1], yvec = data1[,2],
 
 }
 \references{
-Cho, H., Preisser, J., Liu, C., Wu, D. (In preparation), "A bivariate 
+Cho, H., Liu, C., Preisser, J., and Wu, D. (In preparation), "A bivariate 
  zero-inflated negative binomial model for identifying underlying dependence"
 }
 \author{
-Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
+Hunyong Cho, Chuwen Liu, Jinyoung Park, and Di Wu
 }

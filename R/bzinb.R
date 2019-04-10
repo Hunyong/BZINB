@@ -3,7 +3,10 @@
 ##########################################################################################
 
 
-#' @import Rcpp BH
+#' @import Rcpp stats
+###@importFrom stats rpois rgamma rmultinom rbinom var cor optim
+###@importFrom stats dpois dgamma dmultinom dbinom qlogis
+###@importFrom stats cor dnbinom dpois optim qlogis rbinom rgamma rmultinom rpois setNames var
 
 dbzinb <- function(x, y, a0, a1, a2, b1, b2, p1, p2, p3, p4, log=FALSE) {
   dxy <- dbnb(x=x, y=y, a0=a0, a1=a1, a2=a2, b1=b1, b2=b2, log=FALSE)
@@ -31,8 +34,8 @@ dbzinb.vec <- Vectorize(dbzinb)
 #' @param param a vector of parameters (\code{(a0, a1, a2, b1, b2, p1, p2, p3, p4)}). 
 #'    Either \code{param} or individual parameters (\code{a0, a1, a2, b1, b2, p1, p2, p3, p4}) 
 #'    need to be provided.
-#' @param a0,a1,a2 shape parameters of the latent gamma variables. must be positive.
-#' @param b1,b2 scale parameters for the latent gamma variables. must be positive.
+#' @param a0,a1,a2 shape parameters of the latent gamma variables. They must be positive.
+#' @param b1,b2 scale parameters for the latent gamma variables. They must be positive.
 #' @param p1,p2,p3,p4 proportions summing up to 1 (\code{p1 + p2 + p3 + p4 = 1}). 
 #' \code{p1} is the probability of both latent Poisson variables being observed. 
 #' \code{p2} is the probability of only the first Poisson variables being observed.
@@ -86,16 +89,16 @@ dbzinb.vec <- Vectorize(dbzinb)
 #' 
 #' bzinb(xvec = data1[,1], yvec = data1[,2], showFlag = FALSE)
 #' 
-#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
+#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, and Di Wu
 #' @references
-#'  Cho, H., Preisser, J., Liu, C., Wu, D. (In preparation), "A bivariate 
+#'  Cho, H., Preisser, J., Liu, C., and Wu, D. (In preparation), "A bivariate 
 #'  zero-inflated negative binomial model for identifying underlying dependence"
 #' 
 #'  Dempster, A. P., Laird, N. M., & Rubin, D. B. (1977). Maximum likelihood from 
 #'  incomplete data via the EM algorithm. Journal of the Royal Statistical Society: 
 #'  Series B (Methodological), 39(1), 1-22.
 #'  
-#' @import Rcpp BH
+#' @import Rcpp
 #' @export
 #' @useDynLib bzinb
 #' 
@@ -195,9 +198,8 @@ bzinb.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=50000, s
   xy.reduced$freq <- as.numeric(as.character(xy.reduced$freq))
   n <- sum(xy.reduced$freq)
   n.reduced <- as.integer(length(xy.reduced$freq))
-  
+
   if (max(xvec)==0 & max(yvec)==0) {return(c(rep(1e-10,5),1,0,0,0, 0, 1, 0, if (se) {rep(NA, 11)}))} # 9 params, lik, iter, pureCor, and 11 se's
-  #print(xy.reduced)
   info <- if (se) {matrix(0, ncol = 8, nrow = 8, dimnames = list(abp.names[-9], abp.names[-9]))} else {0}
 
   # initial guess
@@ -209,32 +211,36 @@ bzinb.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=50000, s
 
     initial <- rep(NA,9)
     names(initial) <- c("a0", "a1", "a2", "b1", "b2", "p1", "p2", "p3", "p4")
-    initial[4] <- s2.x /ifelse(xbar==0,1e-4, xbar) #%>% print
-    initial[5] <- s2.y /ifelse(ybar==0,1e-4, ybar) #%>% print
-    initial[2:3] <- c(xbar,ybar)/pmax(initial[4:5], c(0.1,0.1)) #%>% print
-    initial[1] <- min(initial[2:3]) * abs(cor.xy) #%>% print
-    initial[2:3] <-  initial[2:3] - initial[1] #%>% print
+    initial[4] <- s2.x /ifelse(xbar==0,1e-4, xbar)
+    initial[5] <- s2.y /ifelse(ybar==0,1e-4, ybar)
+    initial[2:3] <- c(xbar,ybar)/pmax(initial[4:5], c(0.1,0.1))
+    initial[1] <- min(initial[2:3]) * abs(cor.xy)
+    initial[2:3] <-  initial[2:3] - initial[1]
 
     initial[6:9] <- bin.profile(xvec, yvec)   # freq of each zero-nonzero profile
     initial[6:9] <- initial[6:9]/sum(initial[6:9])      # relative freq
     initial <- pmax(initial, 1e-5)
     if(is.na(sum(initial))) { initial[is.na(initial)] <- 1}
-  # print(initial) ###
   } else {
     names(initial) <- abp.names
   }
-  
+  ## tmp.initial <<- initial
   iter = 0L
   param = initial
   lik = -Inf
   expt = setNames(as.double(rep(0, 12)), expt.names)
   lik.vec = rep(0, maxiter)
-  # print(c(param, showFlag, iter))
+  nonconv = 0L
+  
   em(param2 = param, xvec = xy.reduced$x, yvec = xy.reduced$y, 
      freq = xy.reduced$freq, n = n.reduced, expt = expt, info = info,
      se = as.integer(se), iter = as.integer(iter), 
      maxiter = as.integer(maxiter), tol = as.double(tol), 
-     showFlag = as.integer(showFlag), trajectory = lik.vec)
+     showFlag = as.integer(showFlag), nonconv = nonconv, 
+     trajectory = lik.vec)
+  
+  if (nonconv == 1) warning("The iteration exited before reaching convergence.")
+  
   # tmp.expt <<- expt
   # tmp.traj <<- lik.vec
   # underlying correlation (rho)
@@ -284,8 +290,7 @@ bzinb.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=50000, s
     } 
     
   }
-
-  # print(c(param, showFlag, iter))  
+ 
   result <- list(rho = matrix(c(rho, logit.rho, if(se) std.param[c("rho", "logit.rho")] else rep(NA, 2)),
                               ncol = 2, dimnames = list(c("rho", "logit.rho"), c("Estimate", "Std.err"))),
                  coefficients = matrix(c(param, if(se) std.param[1:9] else rep(NA, 9)),
@@ -344,7 +349,7 @@ bzinb <- function(xvec, yvec, initial = NULL, tol = 1e-8, maxiter = 50000, showF
 #' plot(digamma, 0.1, 3)
 #' plot(idigamma, -10.4, 0.9)
 #' 
-#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
+#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, and Di Wu
 #' 
 #' @export
 idigamma <- function(y) {
@@ -369,6 +374,13 @@ idigamma <- function(y) {
 #'    If not integers, they will be rounded to the nearest integers.
 #' @param param a vector of parameters (\code{(a0, a1, a2, b1, b2, p1, p2, p3, p4)}). 
 #'    See \code{\link{bzinb}} for more detail.
+#' @param a0,a1,a2 shape parameters of the latent gamma variables. They must be positive.
+#' @param b1,b2 scale parameters for the latent gamma variables. They must be positive.
+#' @param p1,p2,p3,p4 proportions summing up to 1 (\code{p1 + p2 + p3 + p4 = 1}). 
+#' \code{p1} is the probability of both latent Poisson variables being observed. 
+#' \code{p2} is the probability of only the first Poisson variables being observed.
+#' \code{p3} is the probability of only the second Poisson variables being observed, and
+#' \code{p4} is the probability of both Poisson variables being dropped out. 
 #' @param ... Other arguments passed on to \code{bzinb} function, when \code{param} is 
 #'    \code{NULL}.
 #' 
@@ -387,9 +399,9 @@ idigamma <- function(y) {
 #'          param = c(5.5, 0.017, 0.017, 0.33, 0.36, 
 #'                    0.53, 0.30, 0.08, 0.09))
 #' 
-#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
+#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, and Di Wu
 #' @references 
-#'  Cho, H., Preisser, J., Liu, C., Wu, D. (In preparation), "A bivariate 
+#'  Cho, H., Liu, C., Preisser, J., and Wu, D. (In preparation), "A bivariate 
 #'  zero-inflated negative binomial model for identifying underlying dependence"
 #' 
 #' @export

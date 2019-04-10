@@ -3,7 +3,7 @@
 ##########################################################################################
 
 ## 2.1 basic functions for BvZIP
-#' @import Rcpp BH
+#' @import Rcpp
 
 dbzip.a <- function(x, y = NULL, m0, m1, m2, p, log = FALSE) {
   fxy <- (1 - p) * dbp (x=x, y=y, m0 = m0, m1 = m1, m2 = m2) + ifelse((x == 0 & y == 0), p,0)
@@ -57,15 +57,15 @@ dbzip.a.vec <- Vectorize(dbzip.a)
 #' 
 #' bzip.a(xvec = data1[,1], yvec = data1[,2], showFlag = FALSE)
 #' 
-#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
+#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, and Di Wu
 #' @references
-#'  Cho, H., Preisser, J., Liu, C., Wu, D. (In preparation), "A bivariate 
+#'  Cho, H., Liu, C., Preisser, J., and Wu, D. (In preparation), "A bivariate 
 #'  zero-inflated negative binomial model for identifying underlying dependence"
 #' 
 #'  Li, C. S., Lu, J. C., Park, J., Kim, K., Brinkley, P. A., & Peterson, J. P. (1999). 
 #'  Multivariate zero-inflated Poisson models and their applications. Technometrics, 41, 29-38.
 #' 
-#' @import Rcpp BH
+#' @import Rcpp
 #' @export
 #' 
 lik.bzip.a <- function(xvec, yvec, m0, m1, m2, p, param=NULL) {
@@ -105,6 +105,7 @@ rbzip.a <- function(n, m0, m1, m2, p, param = NULL) {
 # formal EM algorithm
 #' @export
 #' @rdname bzip.a
+#' @importFrom stats dpois
 bzip.a <- function(xvec, yvec, tol = 1e-6, initial = NULL, showFlag = FALSE) { #MLE based on score equations : fail (not convex)
   .check.input(xvec, yvec)
   
@@ -128,7 +129,6 @@ bzip.a <- function(xvec, yvec, tol = 1e-6, initial = NULL, showFlag = FALSE) { #
     } else {
       m = min(x,y)
       prob <- sapply(0:m, function(u) {dpois(x = u, lambda = m0) * dpois(x = x - u, lambda = m1) * dpois(x = y - u, lambda = m2)})
-      # print(prob); print(prob==0) #debug
       if (sum(prob) == 0) {
         # using the ratio of two probs
         if (m==0) {prob <- 1} else {
@@ -139,8 +139,6 @@ bzip.a <- function(xvec, yvec, tol = 1e-6, initial = NULL, showFlag = FALSE) { #
           # used dbp instead of simply dpois to handle large numbers (when mu=1, x = 172, dpois=0 not small number)
           # and adjust by 10^100 (num/den cancel out adj.)
         }
-        #print(c(1,prob)) # debug
-        #print(prob)
       }
       eu <- sum((0:m)*prob)/sum(prob)
       cond.expt <- c(0, 0, x, y) + eu *c(0, 1, -1, -1)
@@ -163,12 +161,13 @@ bzip.a <- function(xvec, yvec, tol = 1e-6, initial = NULL, showFlag = FALSE) { #
   # Repeat
   iter = 0
   param = initial
-  if (showFlag) {print(c("iter", paste0("mu",0:2), "pi"))}
   repeat {
     iter = iter + 1
     param.old <- param # saving old parameters
     param <- param.update (x = xvec, y = yvec, m0 = param[1], m1 = param[2], m2 = param[3], p = param[4])
-    if (showFlag) {print(c(iter, round(param, 5), lik.bzip.a(xvec, yvec, param = param)))}
+    if (showFlag) {message("iter ", iter, ", param ", 
+                           paste0(c("mu0 ", "mu1 ", "mu2 ", "p "), round(param, 5), ", "), 
+                           "lik ", round(lik.bzip.a(xvec, yvec, param = param), 4))}
     if (max(abs(param - param.old)) <= tol) {
       names(param) <- c("mu0", "mu1", "mu2", "p")
       return(param)
@@ -194,7 +193,7 @@ moment.bzip <- function(m0, m1, m2, p) {
 ## 3.1 basic functions for bzip.b
 
 
-#' @import Rcpp BH
+#' @import Rcpp
 
 dbzip.b <- function(x, y = NULL, m0, m1, m2, p1, p2, p3, p4 = 1 - p1 - p2 - p3, log = FALSE) {
   fxy <- p1 * dbp (x=x, y=y, m0 = m0, m1 = m1, m2 = m2) +
@@ -258,12 +257,12 @@ dbzip.b.vec <- Vectorize(dbzip.b)
 #' 
 #' bzip.b(xvec = data1[,1], yvec = data1[,2], showFlag = FALSE)
 #' 
-#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
+#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, and Di Wu
 #' @references
-#'  Cho, H., Preisser, J., Liu, C., Wu, D. (In preparation), "A bivariate 
+#'  Cho, H., Liu, C., Preisser, J., and Wu, D. (In preparation), "A bivariate 
 #'  zero-inflated negative binomial model for identifying underlying dependence"
 #' 
-#' @import Rcpp BH
+#' @import Rcpp
 #' @export
 #' 
 lik.bzip.b <- function(xvec, yvec, m0 , m1, m2, p1, p2, p3, p4, param = NULL){
@@ -312,7 +311,6 @@ mme.bzip.b <- function(xvec, yvec) {
   lambda1 <- m.x2 / m.x - 1
   lambda2 <- m.y2 / m.y - 1
   mu0 <- (lambda1*lambda2) * (w - (2 + lambda1 + lambda2)/2) / (lambda1 + lambda2 + 1 - w)
-  #print(c(w,lambda1, lambda2, mu0))
   mu0 <- max(1e-10, min(mu0, m.x, m.y))
   mu1 <- m.x - mu0
   mu2 <- m.y - mu0
@@ -330,6 +328,7 @@ mme.bzip.b <- function(xvec, yvec) {
 
 #' @export
 #' @rdname bzip.b
+#' @importFrom stats dpois
 bzip.b <- function(xvec, yvec, tol = 1e-6, initial = NULL, showFlag = FALSE, maxiter = 200) {
   .check.input(xvec, yvec)
   if (!is.null(initial)) {
@@ -380,7 +379,6 @@ bzip.b <- function(xvec, yvec, tol = 1e-6, initial = NULL, showFlag = FALSE, max
     m2.den <- sum(EE[c(1,3)])
     m2.num <- m2.den * y - EE1U - EE3U
     
-    #print(c(EE,eu,ev,ew))   ####debug
     return(c(EE, m0.den, m0.num, m1.den, m1.num, m2.den, m2.num))
   }
   fun.cond.exp <- Vectorize(fun.cond.exp.a)
@@ -388,7 +386,6 @@ bzip.b <- function(xvec, yvec, tol = 1e-6, initial = NULL, showFlag = FALSE, max
   # M-step
   param.update <- function(x, y, m0, m1, m2, p1, p2, p3, p4) {
     result <- fun.cond.exp(x, y, m0, m1, m2, p1, p2, p3, p4)
-    #print(result)  ####debug
     result[result < 0] <- 0
     result <- apply(result,1,mean)
     result2 <- c(0,0,0, result[1:4])
@@ -413,12 +410,10 @@ bzip.b <- function(xvec, yvec, tol = 1e-6, initial = NULL, showFlag = FALSE, max
       initial[7] <- 1e-10}
   }
   initial <- pmax(initial, rep(1e-10, 7))
-  # cat("initial = ", paste0(initial, collapse = ", "), "\n")
   
   # Repeat
   iter = 0
   param = initial
-  if (showFlag) {print(c("iter", paste0("mu",0:2), paste0("p",1:4)))}
   repeat {
     if (iter >= maxiter) { warning("EM exceeded maximum number of iterations")
       param <- rep(NA,7)
@@ -429,8 +424,9 @@ bzip.b <- function(xvec, yvec, tol = 1e-6, initial = NULL, showFlag = FALSE, max
     param.old <- param # saving old parameters
     param <- param.update (x = xvec, y = yvec,m0=param[1], m1=param[2], m2=param[3],
                            p1 = param[4], p2 = param[5], p3 = param[6], p4 = param[7])
-    # cat("param = ", paste0(param, collapse = ", "), "\n param.old = ", paste0(param.old, collapse = ", "), "\n")
-    if (showFlag) {print(c(iter, round(param, 5), lik.bzip.b(xvec, yvec, param = param) ))} #lik.bzip(xvec, yvec, param)
+    if (showFlag) {message("iter ", iter, ", param ", 
+                           paste0(c("mu0 ", "mu1 ", "mu2 ", "p1 ", "p2 ", "p3 ", "p4 "), round(param, 5), ", "), 
+                           "lik ", round(lik.bzip.b(xvec, yvec, param = param), 4))}
     if (max(abs(param - param.old)) <= tol) {
       names(param) <- c("mu0", "mu1", "mu2", "p1", "p2", "p3", "p4")
       return(param)

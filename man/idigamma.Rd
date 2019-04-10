@@ -19,5 +19,5 @@ plot(idigamma, -10.4, 0.9)
 
 }
 \author{
-Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
+Hunyong Cho, Chuwen Liu, Jinyoung Park, and Di Wu
 }

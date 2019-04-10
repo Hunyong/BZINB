@@ -2,7 +2,7 @@
 ## 3. Bivariate Negative Binomial (BNB)
 ##########################################################################################
 
-#' @import Rcpp BH
+#' @import Rcpp
 
 ### 1. Density, likelihood, gradient :  This function affects bzinb3, bzinb4
 dbnb <- function(x, y, a0, a1, a2, b1, b2, log=FALSE) {
@@ -10,10 +10,9 @@ dbnb <- function(x, y, a0, a1, a2, b1, b2, log=FALSE) {
   adj = 0
   l1 <- function(k, m) exp(lgamma(a1 + k) - lgamma(k+1) - lgamma(a1) + lgamma(x + y + a0 -m -k) - lgamma(x -k +1) - lgamma(a0 + y - m) + k *log(p1))
   l2 <- function(m) sum(sapply(0:x, l1, m = m))
-  #print(sapply(0:x, l1, m = 0)); print(sum(sapply(0:x, l1, m = 0))) ##
   l3 <- function(m) log(l2(m)) + lgamma(m +a2) - lgamma(m+1) - lgamma(a2) + lgamma(y +a0 -m) - lgamma(y -m +1) - lgamma(a0) + m *log(p2)
-  l4 <- sum(sapply(0:y, function(m) exp(l3(m)))) #%>%print
-  if (is.infinite(l4)) {adj = 200; l4 <- sum(sapply(0:y, function(m) exp(l3(m) - adj)))} #%>%print
+  l4 <- sum(sapply(0:y, function(m) exp(l3(m))))
+  if (is.infinite(l4)) {adj = 200; l4 <- sum(sapply(0:y, function(m) exp(l3(m) - adj)))}
   l4 <- log(l4) - (+x+y+a0)*log(1 + b1 + b2) + x * log(b1) + y * log(b2) - a1*log(1+b1) - a2*log(1+b2)  + adj
   return(ifelse(log, l4, exp(l4)))
 }
@@ -70,12 +69,12 @@ dbnb.vec <- Vectorize(dbnb)
 #' 
 #' bnb(xvec = data1[,1], yvec = data1[,2], showFlag = FALSE)
 #' 
-#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, Di Wu
+#' @author Hunyong Cho, Chuwen Liu, Jinyoung Park, and Di Wu
 #' @references
-#'  Cho, H., Preisser, J., Liu, C., Wu, D. (In preparation), "A bivariate 
+#'  Cho, H., Liu, C., Preisser, J., and Wu, D. (In preparation), "A bivariate 
 #'  zero-inflated negative binomial model for identifying underlying dependence"
 #' 
-#' @import Rcpp BH
+#' @import Rcpp
 #' @export
 #' @useDynLib bzinb
 #'
@@ -130,7 +129,7 @@ dbnb.gr <- function(x, y, a0, a1, a2, b1, b2) {
   l2 <- - (+x+y+a0)*log(1 + b1 + b2) + x * log(b1) + y * log(b2) - a1 * log(1 + b1) - a2 * log(1 + b2)
   l2 <- exp(l2)
   l1.mat <- sapply(0:x, function(k) sapply(0:y, l1, k=k))
-  l1.mat <- (l1.mat * l2) #%>%print
+  l1.mat <- (l1.mat * l2)
   l1.sum <- sum(l1.mat) 
   
   gr.b1.mat <- sapply(0:x, function(k) sapply(0:y, gr.b1, k=k))
@@ -145,11 +144,11 @@ dbnb.gr <- function(x, y, a0, a1, a2, b1, b2) {
   gr.a0.mat <- l1.mat * gr.a0.mat
   gr.a0.sum <- sum(gr.a0.mat)/sum(l1.mat)
   
-  gr.a1.mat <- matrix(sapply(0:x, gr.a1),x+1, y+1) #%>% print
+  gr.a1.mat <- matrix(sapply(0:x, gr.a1),x+1, y+1)
   gr.a1.mat <- l1.mat * t(gr.a1.mat)
   gr.a1.sum <- sum(gr.a1.mat)/sum(l1.mat)
   
-  gr.a2.mat <- matrix(sapply(0:y, gr.a2), y+1, x+1) #%>% print
+  gr.a2.mat <- matrix(sapply(0:y, gr.a2), y+1, x+1)
   gr.a2.mat <- l1.mat * gr.a2.mat
   gr.a2.sum <- sum(gr.a2.mat)/sum(l1.mat)
   result <- list(logdensity=log(l1.sum), gradient = c(gr.a0.sum, gr.a1.sum, gr.a2.sum, gr.b1.sum, gr.b2.sum))
@@ -157,10 +156,6 @@ dbnb.gr <- function(x, y, a0, a1, a2, b1, b2) {
 }
 dbnb.gr.vec <- Vectorize(dbnb.gr)
 
-if (FALSE) {
-  tmp <- dbnb.gr.vec(c(1,1,1),c(0,1,2),1,1,1,1,2)[2,]
-  sapply(tmp, cbind)
-}
 
 ### 2. MLE
 #' @export
@@ -184,7 +179,6 @@ bnb <- function (xvec, yvec, tol = 1e-8, showFlag=FALSE) {
     val <- dbnb.gr.vec( x = xy.reduced$x, y = xy.reduced$y,  a0 = param[1], a1 = param[2], a2 = param[3], b1 = param[4], b2 = param[5])
     lik <- sapply(val[1,],cbind) %*% xy.reduced$freq
     gr <- sapply(val[2,],cbind) %*% xy.reduced$freq
-    # print(c(param,gr)) ###
     return(gr)
   }
 
@@ -192,7 +186,7 @@ bnb <- function (xvec, yvec, tol = 1e-8, showFlag=FALSE) {
   #log-scaled params: param.l
   fn.log = function (param.l) { fn.1 (exp(param.l))}
   gr.log = function (param.l) { 
-    if (showFlag) {print(exp(param.l))}
+    if (showFlag) {message(paste(c("a0", "a1", "a2", "b1", "b2"), round(exp(param.l), 5), collapse = ", "))}
     (as.vector(gr.1 (exp(param.l))) * exp(param.l)) 
   }
   
@@ -207,7 +201,6 @@ bnb <- function (xvec, yvec, tol = 1e-8, showFlag=FALSE) {
   initial[1] <- min(initial[2:3]) * abs(cor.xy)
   initial[2:3] <-  initial[2:3] - initial[1]
   initial <- pmax(initial, 1e-5)
-  #print(initial) ###
   
   result <- try(exp(optim(par = log(initial), fn = fn.log, gr = gr.log, control=list(fnscale=-1, abstol = tol), method = "BFGS")$par), silent=TRUE)
   if (class(result)=="try-error") {
@@ -243,45 +236,9 @@ dev.bnb <- function(xvec, yvec, param = NULL, a0 = NULL, a1 = NULL, a2= NULL, b1
   
   # Saturated model bzip params
   bnb.vec <- Vectorize(bnb)
-  param.sat <- t(bnb.vec(xy.reduced$x, xy.reduced$y)) # %>%print
+  param.sat <- t(bnb.vec(xy.reduced$x, xy.reduced$y))
   param.sat <- do.call(rbind, param.sat)  #"matrix of lists" into "a matrix"
   lik.sat   <- sum(dbnb.vec(x= xy.reduced$x, y = xy.reduced$y, a0 = param.sat[,1], a1 = param.sat[,2], a2 = param.sat[,3], b1 = param.sat[,4], b2 = param.sat[,5],  log = TRUE) * xy.reduced$freq)
   
   return(data.frame(model.likelihood = lik.model, satrtd.likelihood = lik.sat, deviance = 2*(lik.sat - lik.model)))
 }
-if (FALSE) {
-  dev.bnb(extractor(1), extractor(2), param=as.vector(a[,2]))  #455  vs bzip.B:3150
-  dev.bnb(extractor(1), extractor(5), param=as.vector(a[,5]))  #849  vs bzip.B:2877
-  dev.bnb(extractor(1), extractor(3))  #2028 vs bnb: 2030
-  dev.bnb(extractor(1), extractor(8))  #2066 vs bnb: 2077
-  
-  ## heatmap
-  a <- bnb(extractor(1), extractor(3), method="BFGS")
-  tmp <- sapply(0:50, function(r) sapply(0:50, function(s) dbnb(s,r, a[1,1],a[1,2],a[1,3],a[1,4],a[1,5])))
-  plot_ly(z = tmp[1:2,2:10], type = "heatmap")
-  table(extractor(1), extractor(3))
-  
-  MLE.Geneset1$bnb ########
-  a <- cbind(1,2,dev.bnb(extractor(1), extractor(2), param = c(1,1,1,1,1,1,1)))
-  tt(1)
-  for (i in 1:dim(MLE.Geneset1$bnb)[1]) {
-    #if (i ==300 | i == 349 ) {a[i,] <- c(a1, a2, NA,NA,NA)}
-    #if (i >= 350) {
-    tmp <- MLE.Geneset1$bnb[i,]
-    a1 <- tmp[1]; a2 <- tmp[2]
-    a3 <- tmp[4:7] #params
-    a[i,] <- c(a1,a2,dev.bnb(extractor(as.numeric(a1),1), extractor(as.numeric(a2),1), param = a3))
-    print(a[i,])  
-  }
-  tt(2) # 5.8 hours
-  
-  MLE.Geneset1$bnb$dev <- a$deviance
-  
-  sum(MLE.Geneset1$bnb$dev>863); sum(MLE.Geneset1$bnb$dev<863)
-  plot3.2.1 <-  ggplot(MLE.Geneset1$bnb, aes(non0.min, dev)) +
-    geom_point(aes(color=1-non0.min)) + ggtitle(paste0("deviance of bnb model - Geneset 1")) +
-    ylim(c(0,25000)) +
-    xlab("nonzero-count proprotion(min)") + ylab("Deviance of bnb") + geom_abline(intercept=863, slope=0, linetype, color="red", size=0.1)
-  png2(plot3.2.1, width = 720, height = 360)
-}
-
