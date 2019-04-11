@@ -230,7 +230,7 @@ bzinb.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=50000, s
   param = initial
   lik = -Inf
   expt = setNames(as.double(rep(0, 12)), expt.names)
-  lik.vec = rep(0, maxiter)
+  lik.vec = rep(0, maxiter + 1)
   nonconv = 0L
   
   em(param2 = param, xvec = xy.reduced$x, yvec = xy.reduced$y, 

@@ -81,7 +81,7 @@ pairwise.bzinb <- function(data, nonzero.prop = TRUE, fullParam = FALSE,
     
     if (showFlag) message("pair ", s[1], "-", s[2], ": ", "(rho, se.rho) = (", 
                           formatC(result$rho[1,1], digits = 5, format = "f", flag = "0"), ", ", 
-                          formatC(result$rho[1,2], digits = 5, format = "f", flag = "0"), ")\n")
+                          formatC(result$rho[1,2], digits = 5, format = "f", flag = "0"), ")")
     result2 <- c(rho = result$rho["rho", "Estimate"], 
                  se.rho = result$rho["rho", "Std.err"],
                  if (fullParam) result$coefficients[, "Estimate"],  
