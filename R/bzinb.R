@@ -17,6 +17,54 @@ dbzinb <- function(x, y, a0, a1, a2, b1, b2, p1, p2, p3, p4, log=FALSE) {
 }
 dbzinb.vec <- Vectorize(dbzinb)
 
+# weight of nondropout
+wbzinb.i <- function(x, y, a0, a1, a2, b1, b2, p1, p2, p3, p4, param = NULL) {
+  if (!is.null(param)) {
+    if (length(param) != 9) stop("length(param) must be 9.")
+    a0 = param[1]; a1 = param[2]; a2 = param[3]; b1 = param[4]; b2 = param[5]
+    p1 = param[6]; p2 = param[7]; p3 = param[8]; p4 = param[9]
+  }
+  
+  dxy <- dbnb(x=x, y=y, a0=a0, a1=a1, a2=a2, b1=b1, b2=b2, log=FALSE)
+  dx <- dnbinom(x=x, a0+a1, 1/(1+b1))
+  dy <- dnbinom(x=y, a0+a2, 1/(1+b2))
+  result <- dxy * p1 + dx * ifelse(y==0,p2,0) + dy * ifelse(x==0,p3,0) + ifelse(x+y==0,p4,0)
+  return(dxy * p1 / result)
+}
+wbzinb <- Vectorize(wbzinb.i, vectorize.args = c("x", "y"))
+
+weighted.cor.base <- function(xvec, yvec, weight) {
+  Exy = weighted.mean(xvec * yvec, w = weight)
+  Exx = weighted.mean(xvec * xvec, w = weight)
+  Eyy = weighted.mean(yvec * yvec, w = weight)
+  Ex = weighted.mean(xvec, w = weight)
+  Ey = weighted.mean(yvec, w = weight)
+  cor = (Exy - Ex * Ey) / sqrt((Exx - Ex^2) * (Eyy - Ey^2))
+  return(cor)
+}
+
+#' @import Rcpp
+#' @export
+#' @useDynLib bzinb
+#' 
+weighted.pc <- function(xvec, yvec, param) {
+  if (length(param) != 9) stop("length(param) must be 9.")
+  .check.input(xvec, yvec)
+  .check.ab(c(a0, a1, a2, b1, b2))
+  .check.p(c(p1, p2, p3, p4))
+  
+  xy.reduced <- as.data.frame(table(xvec,yvec))
+  names(xy.reduced) <- c("x", "y","freq")
+  xy.reduced <- xy.reduced[xy.reduced$freq != 0,]
+  xy.reduced$x <- as.numeric(as.character(xy.reduced$x))
+  xy.reduced$y <- as.numeric(as.character(xy.reduced$y))
+  xy.reduced$freq <- as.numeric(as.character(xy.reduced$freq))
+  
+  weight = wbzinb(xy.reduced$x, xy.reduced$y, param = param)
+  wcor = weighted.cor.base(xy.reduced$x, xy.reduced$y, weight = xy.reduced$freq * weight)
+  wcor
+}
+
 #' @rdname bzinb
 #' @name bzinb
 #' @aliases rbzinb
