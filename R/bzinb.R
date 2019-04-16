@@ -50,8 +50,8 @@ weighted.cor.base <- function(xvec, yvec, weight) {
 weighted.pc <- function(xvec, yvec, param) {
   if (length(param) != 9) stop("length(param) must be 9.")
   .check.input(xvec, yvec)
-  .check.ab(c(a0, a1, a2, b1, b2))
-  .check.p(c(p1, p2, p3, p4))
+  .check.ab(param[1:5])
+  .check.p(param[6:9])
   
   xy.reduced <- as.data.frame(table(xvec,yvec))
   names(xy.reduced) <- c("x", "y","freq")

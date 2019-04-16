@@ -172,9 +172,8 @@ bin.profile <- function(xvec, yvec) {
   }
   if (any(p < 0) | any(p > 1)){
     stop('p1, p2, p3, p4 must be in [0, 1] inclusively.')
-  } 
-  
-  if(!sum(p) == 1){
+  }
+  if(abs(sum(p) - 1) > 1e-10){
     stop(paste('sum of p1-p4 must be 1.'))
   }
 }
