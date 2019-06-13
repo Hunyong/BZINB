@@ -13,6 +13,14 @@ dBvZINB_Expt_vec <- function(xvec, yvec, freq, n, a0, a1, a2, b1, b2, p1, p2, p3
     invisible(.Call('_bzinb_dBvZINB_Expt_vec', PACKAGE = 'bzinb', xvec, yvec, freq, n, a0, a1, a2, b1, b2, p1, p2, p3, p4, expt, s_i, info, se))
 }
 
+dBvZINB_Expt_direct <- function(x, y, freq, a0, a1, a2, b1, b2, p1, p2, p3, p4, l_sum, s_i, info) {
+    invisible(.Call('_bzinb_dBvZINB_Expt_direct', PACKAGE = 'bzinb', x, y, freq, a0, a1, a2, b1, b2, p1, p2, p3, p4, l_sum, s_i, info))
+}
+
+dBvZINB_Expt_direct_vec <- function(xvec, yvec, freq, n, a0, a1, a2, b1, b2, p1, p2, p3, p4, l_sum, s_i, info) {
+    invisible(.Call('_bzinb_dBvZINB_Expt_direct_vec', PACKAGE = 'bzinb', xvec, yvec, freq, n, a0, a1, a2, b1, b2, p1, p2, p3, p4, l_sum, s_i, info))
+}
+
 inv_digamma <- function(x, y) {
     .Call('_bzinb_inv_digamma', PACKAGE = 'bzinb', x, y)
 }

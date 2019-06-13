@@ -79,6 +79,55 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// dBvZINB_Expt_direct
+void dBvZINB_Expt_direct(int& x, int& y, int& freq, double& a0, double& a1, double& a2, double& b1, double& b2, double& p1, double& p2, double& p3, double& p4, NumericVector& l_sum, NumericVector& s_i, NumericVector& info);
+RcppExport SEXP _bzinb_dBvZINB_Expt_direct(SEXP xSEXP, SEXP ySEXP, SEXP freqSEXP, SEXP a0SEXP, SEXP a1SEXP, SEXP a2SEXP, SEXP b1SEXP, SEXP b2SEXP, SEXP p1SEXP, SEXP p2SEXP, SEXP p3SEXP, SEXP p4SEXP, SEXP l_sumSEXP, SEXP s_iSEXP, SEXP infoSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int& >::type x(xSEXP);
+    Rcpp::traits::input_parameter< int& >::type y(ySEXP);
+    Rcpp::traits::input_parameter< int& >::type freq(freqSEXP);
+    Rcpp::traits::input_parameter< double& >::type a0(a0SEXP);
+    Rcpp::traits::input_parameter< double& >::type a1(a1SEXP);
+    Rcpp::traits::input_parameter< double& >::type a2(a2SEXP);
+    Rcpp::traits::input_parameter< double& >::type b1(b1SEXP);
+    Rcpp::traits::input_parameter< double& >::type b2(b2SEXP);
+    Rcpp::traits::input_parameter< double& >::type p1(p1SEXP);
+    Rcpp::traits::input_parameter< double& >::type p2(p2SEXP);
+    Rcpp::traits::input_parameter< double& >::type p3(p3SEXP);
+    Rcpp::traits::input_parameter< double& >::type p4(p4SEXP);
+    Rcpp::traits::input_parameter< NumericVector& >::type l_sum(l_sumSEXP);
+    Rcpp::traits::input_parameter< NumericVector& >::type s_i(s_iSEXP);
+    Rcpp::traits::input_parameter< NumericVector& >::type info(infoSEXP);
+    dBvZINB_Expt_direct(x, y, freq, a0, a1, a2, b1, b2, p1, p2, p3, p4, l_sum, s_i, info);
+    return R_NilValue;
+END_RCPP
+}
+// dBvZINB_Expt_direct_vec
+void dBvZINB_Expt_direct_vec(IntegerVector& xvec, IntegerVector& yvec, IntegerVector& freq, int& n, double& a0, double& a1, double& a2, double& b1, double& b2, double& p1, double& p2, double& p3, double& p4, NumericVector& l_sum, NumericVector& s_i, NumericVector& info);
+RcppExport SEXP _bzinb_dBvZINB_Expt_direct_vec(SEXP xvecSEXP, SEXP yvecSEXP, SEXP freqSEXP, SEXP nSEXP, SEXP a0SEXP, SEXP a1SEXP, SEXP a2SEXP, SEXP b1SEXP, SEXP b2SEXP, SEXP p1SEXP, SEXP p2SEXP, SEXP p3SEXP, SEXP p4SEXP, SEXP l_sumSEXP, SEXP s_iSEXP, SEXP infoSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< IntegerVector& >::type xvec(xvecSEXP);
+    Rcpp::traits::input_parameter< IntegerVector& >::type yvec(yvecSEXP);
+    Rcpp::traits::input_parameter< IntegerVector& >::type freq(freqSEXP);
+    Rcpp::traits::input_parameter< int& >::type n(nSEXP);
+    Rcpp::traits::input_parameter< double& >::type a0(a0SEXP);
+    Rcpp::traits::input_parameter< double& >::type a1(a1SEXP);
+    Rcpp::traits::input_parameter< double& >::type a2(a2SEXP);
+    Rcpp::traits::input_parameter< double& >::type b1(b1SEXP);
+    Rcpp::traits::input_parameter< double& >::type b2(b2SEXP);
+    Rcpp::traits::input_parameter< double& >::type p1(p1SEXP);
+    Rcpp::traits::input_parameter< double& >::type p2(p2SEXP);
+    Rcpp::traits::input_parameter< double& >::type p3(p3SEXP);
+    Rcpp::traits::input_parameter< double& >::type p4(p4SEXP);
+    Rcpp::traits::input_parameter< NumericVector& >::type l_sum(l_sumSEXP);
+    Rcpp::traits::input_parameter< NumericVector& >::type s_i(s_iSEXP);
+    Rcpp::traits::input_parameter< NumericVector& >::type info(infoSEXP);
+    dBvZINB_Expt_direct_vec(xvec, yvec, freq, n, a0, a1, a2, b1, b2, p1, p2, p3, p4, l_sum, s_i, info);
+    return R_NilValue;
+END_RCPP
+}
 // inv_digamma
 double inv_digamma(double x, double y);
 RcppExport SEXP _bzinb_inv_digamma(SEXP xSEXP, SEXP ySEXP) {
@@ -96,6 +145,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_bzinb_em", (DL_FUNC) &_bzinb_em, 14},
     {"_bzinb_dBvZINB_Expt", (DL_FUNC) &_bzinb_dBvZINB_Expt, 16},
     {"_bzinb_dBvZINB_Expt_vec", (DL_FUNC) &_bzinb_dBvZINB_Expt_vec, 17},
+    {"_bzinb_dBvZINB_Expt_direct", (DL_FUNC) &_bzinb_dBvZINB_Expt_direct, 15},
+    {"_bzinb_dBvZINB_Expt_direct_vec", (DL_FUNC) &_bzinb_dBvZINB_Expt_direct_vec, 16},
     {"_bzinb_inv_digamma", (DL_FUNC) &_bzinb_inv_digamma, 2},
     {NULL, NULL, 0}
 };

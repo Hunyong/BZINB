@@ -39,6 +39,19 @@ void dBvZINB_Expt_vec(Rcpp::IntegerVector &xvec, Rcpp::IntegerVector &yvec,
                       double &p3, double &p4,
                       Rcpp::NumericVector &expt, Rcpp::NumericVector &s_i, Rcpp::NumericVector &info, int se);
 
+void dBvZINB_Expt_direct(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
+                         double &b1, double &b2, double &p1, double &p2, 
+                         double &p3, double &p4,
+                         Rcpp::NumericVector &l_sum, Rcpp::NumericVector &s_i, 
+                         Rcpp::NumericVector &info);
+void dBvZINB_Expt_direct_vec(Rcpp::IntegerVector &xvec, Rcpp::IntegerVector &yvec, 
+                             Rcpp::IntegerVector &freq, 
+                             int &n, double &a0, double &a1, double &a2,
+                             double &b1, double &b2, double &p1, double &p2, 
+                             double &p3, double &p4,
+                             Rcpp::NumericVector &l_sum, Rcpp::NumericVector &s_i, 
+                             Rcpp::NumericVector &info);
+
 double inv_digamma(double x, double y);
 void inv_digamma_vec(double lb[1], Rcpp::NumericVector &expt, double a[3], 
                      double idgam[3]);

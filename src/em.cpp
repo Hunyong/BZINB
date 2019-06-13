@@ -10,8 +10,9 @@
 using namespace std;
 using namespace Rcpp;
 #define ITER_ALLOWANCE 100   // number of iterations allowed after finding the peak
-//#define DEBUG4
-//#define DEBUG5
+// #define DEBUG4
+// #define DEBUG5
+// #define DEBUG7
 
 // 3. EM
 // [[Rcpp::export]]
@@ -86,15 +87,20 @@ void em(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
     {
       if (i == 0) {Rcout << "idgam: ";}
       Rcout << idgam[i] << " ";
-      if (i == 3) {Rcout <<  "lb = " << lb[0]  << endl;}
     }
+    Rcout <<  "lb = " << lb[0]  << endl;
     Rcout << "before opt_lb! (of iter" << iter << ") ";
 #endif
     //if (iter[0] > 2058) {cout << "before opt_lb" << endl;}
+    
     // Finding optimized a0, a1, a2, b1
+#ifdef DEBUG7
+    Rcout << "starting opt_lb. lb = " << lb[0] << endl;
+#endif  
+    // after finding "nice" initial lb, run opt_lb.
     opt_lb(lb, expt, param, idgam);
 #ifdef DEBUG5
-  Rcout << ", after opt_lb! (of iter" << iter << ") "<< endl;
+  Rcout << ", after opt_lb! (of iter" << iter << ") "<< lb[0] << endl;
 #endif
     //if (iter[0] > 2058) {cout << "before opt_lb" << endl;}
     double delta = expt[11]*1.0 / (expt[1] + expt[3]);

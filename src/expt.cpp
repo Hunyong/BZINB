@@ -128,18 +128,20 @@ void dBvZINB_Expt(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
   std::vector <double> log_R1_mat3(y+1); 
   std::vector <double> log_R2_mat3(y+1);
   
+  // cout << endl << endl << "line 132; x = "<< x << ", y = " << y << endl;
   for(int i = 0;i <= x;i++)
   {
+    // cout << "line 139; i,j = " << i <<" "<< 1 <<" l_A_mat(i,1)= " << l_A_mat(i, 1)<<" l_C_mat(i,1)= " << l_C_mat(i, 1) << endl;
     for(int j = 0;j <= y;j++)
     {
       l1(x, y, a0, a1, a2, i, j, l_A_mat(i, j), adj_A);  // updating l_A_mat(i, j)
       l1_c(t1, t2, i, j, l_C_mat(i, j), adj_C);
       sum_A += l_A_mat(i, j);
       sum_C += l_C_mat(i, j);
-      //cout << i <<" "<<j<<" "<< l_A_mat(i, j) << endl;
       //system("pause");
     }
   }
+  // cout << "line 139; l1B = " << l1_B << endl;
   
   if (l1_B < -200 && log(l2_B + l3_B + l4_B) < 0)
   {
@@ -148,8 +150,7 @@ void dBvZINB_Expt(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
     l1_B += adj_B1;
   }
   l1_B = exp(l1_B) * p1;
-  //cout << l1_B <<endl;
-  
+
   while (log(sum_A) > 250)
   {
     sum_A = 0;
@@ -194,6 +195,7 @@ void dBvZINB_Expt(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
       sum_A += l_A_mat(i, j);                //code missed;
     }
   }
+
   if(log(sum_AC) > 200)
   {
     adj_A += 100;
@@ -229,15 +231,26 @@ void dBvZINB_Expt(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
       }
     }
   }
+  
+  // updating l2_A and l3_A with updated adj_A.
+  for(int i = 0;i <= x;i++)
+  {
+    l2_A(x, a0, a1, a2, i, l2_A_mat[i], adj_A);  //update l2_A_mat[i]
+  }
+  for(int j = 0;j <= y;j++)
+  {
+    l3_A(y, a0, a1, a2, j, l3_A_mat[j], adj_A) ; //update l3_A_mat[i]
+  }
+  
+  
   double l_sum =0;
-  //cout << "sumAC *l1B = "<< sum_AC * l1_B << endl;
   l_sum = sum_AC * l1_B + sum_A * (l2_B +  l3_B +  l4_B) * exp(-adj_C);
-  //cout << l_sum << " " << sum_AC << " " << l1_B << " " << sum_A << " " << l2_B << " " << l3_B << " " << l4_B << " " << adj_C << endl;
+  // cout << l_sum << " " << sum_AC << " " << l1_B << " " << sum_A << " " << l2_B << " " << l3_B << " " << l4_B << " " << adj_C << endl;
   if (l_sum == 0)
   {
     adj_sum = -floor(log(sum_AC)*2*1.0/3 + log(l1_B)*2*1.0/3);
-    //cout << adj_sum<<"adj";
-    //cout << sum_AC <<"AC"<< adj_sum <<"@"<< l1_B<<"c"<<adj_C<<endl;
+    // cout << adj_sum<<"adj";
+    // cout << sum_AC <<"AC"<< adj_sum <<"@"<< l1_B<<"c"<<adj_C<<endl;
     l_sum = sum_AC * exp(adj_sum) * l1_B + sum_A * (exp(adj_sum) * (l2_B +  l3_B +  l4_B)) * exp(-adj_C);
   }
   double R0_E1_B, R0_E2_B, R0_E3_B, R0_E4_B, R1_E1_B, R1_E2_B, R1_E3_B, R1_E4_B;
@@ -278,19 +291,24 @@ void dBvZINB_Expt(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
       log_R1_mat(i, j) = l_A_mat(i, j) * (log_R1_E1(i,a1) + log (R1_E1_B));
       log_R2_mat(i, j) = (log_R2_E1(j,a2) + log(R2_E1_B)) * l_A_mat(i, j);
       //cout << "line252; log_R1_mat(i, j): " << log_R1_mat(i, j) << ", (log_R1_E1(i,a1) + log (R1_E1_B)): " << (log_R1_E1(i,a1) + log (R1_E1_B)) << ", log_R1_E1(i,a1):" << log_R1_E1(i,a1) << ", log (R1_E1_B): " << log (R1_E1_B) <<endl;
-      log_R0_E += log_R0_mat(i, j) * l_C_mat(i, j) * exp(adj_sum - adj_C) * l1_B;
+      log_R0_E += log_R0_mat(i, j) * l_C_mat(i, j) * exp(adj_sum) * l1_B;
       //cout << "i = " << i << ", j = " << j << ", logR0E = " << log_R0_E << " " << endl;
-      log_R1_E += log_R1_mat(i, j) * l_C_mat(i, j) * exp(adj_sum - adj_C) * l1_B;
+      log_R1_E += log_R1_mat(i, j) * l_C_mat(i, j) * exp(adj_sum) * l1_B;
       //cout << "line257; sum = " << log_R1_mat[i][0] * l_C_mat[i][0] * exp(adj_sum - adj_C) * l1_B << ", lCmat: " <<l_C_mat[i][0] << ", l1B: " << l1_B <<endl;
-      //cout << "line257; log_R1_E = " << log_R1_E << endl;
-      log_R2_E += log_R2_mat(i, j) * l_C_mat(i, j) * exp(adj_sum - adj_C) * l1_B;
+      log_R2_E += log_R2_mat(i, j) * l_C_mat(i, j) * exp(adj_sum) * l1_B;
+      // cout << "line286; log_R1_E = " << log_R1_E << ", ";
+      // cout << "log_R2_E = " << log_R2_E << endl;
+      
       R1_E += R1_mat(i, j) * l_C_mat(i, j) * exp(adj_sum) * l1_B * R1_E1_B + R1_mat(i, j) * (l2_B * R1_E2_B + l3_B * R1_E3_B + l4_B * R1_E4_B)*exp(-adj_C + adj_sum);
       R2_E += R2_mat(i, j) * l_C_mat(i, j) * exp(adj_sum) * l1_B * R2_E1_B + R2_mat(i, j) * (l2_B * R2_E2_B + l3_B * R2_E3_B + l4_B * R2_E4_B)*exp(-adj_C + adj_sum);
     }
-    log_R0_E += (log_R0_mat2[i] * l2_B) * exp(adj_sum);
+    log_R0_E += (log_R0_mat2[i] * l2_B) * exp(adj_sum - adj_C);
     //cout << "line262; log_R1_E(cum1) = " << log_R1_E << ", line sum = " << (log_R1_mat2[i] * l2_B) * exp(adj_sum) << "log_R1_E(cum2) = " << log_R1_E + (log_R1_mat2[i] * l2_B) * exp(adj_sum) << endl;
-    log_R1_E += (log_R1_mat2[i] * l2_B) * exp(adj_sum);
-    log_R2_E += (log_R2_mat2[i] * l2_B) * exp(adj_sum);
+    log_R1_E += (log_R1_mat2[i] * l2_B) * exp(adj_sum - adj_C);
+    log_R2_E += (log_R2_mat2[i] * l2_B) * exp(adj_sum - adj_C);
+    // cout << "line296; log_R1_E = " << log_R1_E << ", ";
+    // cout << "log_R2_E = " << log_R2_E << endl;
+    
     //cout << "line263; cum = " << log_R1_E << " sum = " << (log_R1_mat2[i] * l2_B) * exp(adj_sum) << ", logR1E = " << log_R1_E << ", l2_B = " << l2_B << ", exp(adj_sum) = " << exp(adj_sum) << endl;
     //cout << "logR1mat2.i = " << log_R1_mat2[i] << endl;
   }
@@ -300,22 +318,24 @@ void dBvZINB_Expt(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
     log_R0_mat3[j] = l3_A_mat[j] * (log_R0_E3(y, a0, j) + log(R0_E3_B));
     log_R1_mat3[j] = l3_A_mat[j] * (boost::math::digamma(a1) + log(R1_E3_B));
     log_R2_mat3[j] = l3_A_mat[j] * (log_R2_E1(j,a2) + log (R2_E3_B));
-    log_R0_E += (log_R0_mat3[j] * l3_B) * exp(adj_sum);
-    log_R1_E += (log_R1_mat3[j] * l3_B) * exp(adj_sum);
-    //cout << "line275; cum = " << log_R1_E << endl;
-    log_R2_E += (log_R2_mat3[j] * l3_B) * exp(adj_sum);
+    log_R0_E += (log_R0_mat3[j] * l3_B) * exp(adj_sum - adj_C);
+    log_R1_E += (log_R1_mat3[j] * l3_B) * exp(adj_sum - adj_C);
+    log_R2_E += (log_R2_mat3[j] * l3_B) * exp(adj_sum - adj_C);
+  // cout << "line311; log_R1_mat3= " << log_R1_mat3[j] << "cum log_R1_E= " << log_R1_E << "/ log_R2_mat3= " << log_R2_mat3[j] << ", cum log_R2_E = " << log_R2_E << endl;
   }
   
   
   R0_E /= l_sum;
   R1_E /= l_sum;
   R2_E /= l_sum;
-  log_R0_E += (boost::math::digamma(a0) + log(b1)) * exp(adj_sum) * l4_B;
+
+  log_R0_E += (boost::math::digamma(a0) + log(b1)) * exp(adj_sum - adj_C) * l4_B;
   log_R0_E /= l_sum;
-  log_R1_E += (boost::math::digamma(a1) + log(b1)) * exp(adj_sum) * l4_B;
+  log_R1_E += (boost::math::digamma(a1) + log(b1)) * exp(adj_sum - adj_C) * l4_B;
   log_R1_E /= l_sum;
-  log_R2_E += (boost::math::digamma(a2) + log(b1)) * exp(adj_sum) * l4_B;
+  log_R2_E += (boost::math::digamma(a2) + log(b1)) * exp(adj_sum - adj_C) * l4_B;
   log_R2_E /= l_sum;
+
   // cout << sum_AC << l1_B << sum_A << l1_B << l2_B << l3_B << l4_B << adj_C << adj_sum << endl;
   double E_E1 = sum_AC * exp(adj_sum) * l1_B;
   double E_E2 = sum_A * l2_B * exp(-adj_C + adj_sum);
