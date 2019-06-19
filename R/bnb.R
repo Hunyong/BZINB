@@ -7,14 +7,19 @@
 ### 1. Density, likelihood, gradient :  This function affects bzinb3, bzinb4
 dbnb <- function(x, y, a0, a1, a2, b1, b2, log=FALSE) {
   p1 = (b1 + b2 + 1) /(b1 + 1); p2 = (b1 + b2 + 1) /(b2 + 1)
-  adj = 0
-  l1 <- function(k, m) exp(lgamma(a1 + k) - lgamma(k+1) - lgamma(a1) + lgamma(x + y + a0 -m -k) - lgamma(x -k +1) - lgamma(a0 + y - m) + k *log(p1))
-  l2 <- function(m) sum(sapply(0:x, l1, m = m))
-  l3 <- function(m) log(l2(m)) + lgamma(m +a2) - lgamma(m+1) - lgamma(a2) + lgamma(y +a0 -m) - lgamma(y -m +1) - lgamma(a0) + m *log(p2)
-  l4 <- sum(sapply(0:y, function(m) exp(l3(m))))
-  if (is.infinite(l4)) {adj = 200; l4 <- sum(sapply(0:y, function(m) exp(l3(m) - adj)))}
-  l4 <- log(l4) - (+x+y+a0)*log(1 + b1 + b2) + x * log(b1) + y * log(b2) - a1*log(1+b1) - a2*log(1+b2)  + adj
-  return(ifelse(log, l4, exp(l4)))
+  adj1 <- adj3 <- 0
+  l1 <- function(k, m, adj1) exp(lgamma(a1 + k) - lgamma(k+1) - lgamma(a1) + lgamma(x + y + a0 -m -k) - lgamma(x -k +1) - lgamma(a0 + y - m) + k *log(p1) - adj1)
+  l2 <- function(m) sum(sapply(0:x, l1, m = m, adj1 = adj1))
+  l2.y <- l2(y)
+  while (l2.y > 1e+200) {adj1 = adj1 + 200; l2.y <- l2(y)}
+  l3 <- function(m, adj3) log(l2(m)) + lgamma(m + a2) - lgamma(m+1) - lgamma(a2) + lgamma(y +a0 -m) - lgamma(y -m +1) - lgamma(a0) + m *log(p2) - adj3
+  l4 <- function() sum(sapply(0:y, function(s) exp(l3(s, adj3 = adj3))))
+  l4.m <- l4()
+  while (l4.m > 200) {adj3 = adj3 + 200; l4.m <- l4()}
+  # cat("adj1 = ", adj1, "\n"); 
+  # cat("adj3 = ", adj3, "\n"); 
+  l4.m <- log(l4.m) - (+x+y+a0)*log(1 + b1 + b2) + x * log(b1) + y * log(b2) - a1*log(1+b1) - a2*log(1+b2)  + adj1 + adj3
+  return(ifelse(log, l4.m, exp(l4.m)))
 }
 dbnb.vec <- Vectorize(dbnb)
 
@@ -119,34 +124,53 @@ dbnb.gr <- function(x, y, a0, a1, a2, b1, b2) {
   gr.a2.1 <- - digamma(a2) - log(1 + b2)
   gr.a2 <- function(m) {if (m==0) {- log(1 + b2)} else  {digamma(a2 + m) + gr.a2.1}}
   
-  l1 <- function(k, m) exp(lgamma(a1 + k) - lgamma(k+1) - lgamma(a1) + lgamma(x + y + a0 -m -k) - lgamma(x -k +1) - lgamma(a0 + y - m) + k *log(p1)
-                           + lgamma(m +a2) - lgamma(m+1) - lgamma(a2) + lgamma(y +a0 -m) - lgamma(y -m +1) - lgamma(a0) + m *log(p2))
+  adj.A <- adj.B1 <- 0
+  
+  l1 <- function(k, m, adjj = 0) {
+    exp(lgamma(a1 + k) - lgamma(k+1) - lgamma(a1) + lgamma(x + y + a0 -m -k) - lgamma(x -k +1) - lgamma(a0 + y - m) + k *log(p1)
+        + lgamma(m +a2) - lgamma(m+1) - lgamma(a2) + lgamma(y +a0 -m) - lgamma(y -m +1) - lgamma(a0) + m *log(p2) - adjj)
+  }
   l2 <- - (+x+y+a0)*log(1 + b1 + b2) + x * log(b1) + y * log(b2) - a1 * log(1 + b1) - a2 * log(1 + b2)
+  if (l2 < - 200) {
+    adj.B1 = ((-l2 - 200) %/% 100) * 100 # prevent exp(l1.B) from being 0
+    l2 = l2 + adj.B1
+  }
   l2 <- exp(l2)
-  l1.mat <- sapply(0:x, function(k) sapply(0:y, l1, k=k))
+  
+  l1.mat <- sapply(0:x, function(k) sapply(0:y, l1, k = k, adjj = adj.A))
+  while (log(sum(l1.mat)) > 250) {
+    adj.A = adj.A + 200
+    l1.mat <- sapply(0:x, function(k) sapply(0:y, l1, k = k, adjj = adj.A))  # %>% print
+  }
+  
+# cat("line 127\n")
+# cat("adjA = ", adj.A, "adjB1 = ", adj.B1, "\n")
+# print(l1.mat)
   l1.mat <- (l1.mat * l2)
+# cat("line 131\n")
+# print(l1.mat)
   l1.sum <- sum(l1.mat) 
   
   gr.b1.mat <- sapply(0:x, function(k) sapply(0:y, gr.b1, k=k))
   gr.b1.mat <- l1.mat * gr.b1.mat
-  gr.b1.sum <- sum(gr.b1.mat)/sum(l1.mat)
+  gr.b1.sum <- sum(gr.b1.mat)/sum(l1.mat)   # (adj.A - adj.B1) cancels out. No need for correction.
   
   gr.b2.mat <- sapply(0:x, function(k) sapply(0:y, gr.b2, k=k))
   gr.b2.mat <- l1.mat * gr.b2.mat
-  gr.b2.sum <- sum(gr.b2.mat)/sum(l1.mat)
+  gr.b2.sum <- sum(gr.b2.mat)/sum(l1.mat)   # (adj.A - adj.B1) cancels out. No need for correction.
     
   gr.a0.mat <- sapply(0:x, function(k) sapply(0:y, gr.a0, k=k))
   gr.a0.mat <- l1.mat * gr.a0.mat
-  gr.a0.sum <- sum(gr.a0.mat)/sum(l1.mat)
+  gr.a0.sum <- sum(gr.a0.mat)/sum(l1.mat)   # (adj.A - adj.B1) cancels out. No need for correction.
   
   gr.a1.mat <- matrix(sapply(0:x, gr.a1),x+1, y+1)
   gr.a1.mat <- l1.mat * t(gr.a1.mat)
-  gr.a1.sum <- sum(gr.a1.mat)/sum(l1.mat)
+  gr.a1.sum <- sum(gr.a1.mat)/sum(l1.mat)   # (adj.A - adj.B1) cancels out. No need for correction.
   
   gr.a2.mat <- matrix(sapply(0:y, gr.a2), y+1, x+1)
   gr.a2.mat <- l1.mat * gr.a2.mat
-  gr.a2.sum <- sum(gr.a2.mat)/sum(l1.mat)
-  result <- list(logdensity=log(l1.sum), gradient = c(gr.a0.sum, gr.a1.sum, gr.a2.sum, gr.b1.sum, gr.b2.sum))
+  gr.a2.sum <- sum(gr.a2.mat)/sum(l1.mat)   # (adj.A - adj.B1) cancels out. No need for correction.
+  result <- list(logdensity=log(l1.sum) + adj.A - adj.B1, gradient = c(gr.a0.sum, gr.a1.sum, gr.a2.sum, gr.b1.sum, gr.b2.sum))
   return(result)
 }
 dbnb.gr.vec <- Vectorize(dbnb.gr)
@@ -164,7 +188,8 @@ bnb <- function (xvec, yvec, tol = 1e-8, showFlag=FALSE) {
   xy.reduced$y <- as.numeric(as.character(xy.reduced$y))
   xy.reduced$freq <- as.numeric(as.character(xy.reduced$freq))
   if (max(xvec)==0 & max(yvec)==0) return(c(a0 = NA, a1 = NA, a2 = NA, b1 = NA, b2 = NA))
-  
+  # tmp.xy.reduced <<- xy.reduced
+
   fn.1 = function (param) {
     val <- dbnb.gr.vec( x = xy.reduced$x, y = xy.reduced$y,  a0 = param[1], a1 = param[2], a2 = param[3], b1 = param[4], b2 = param[5])
     lik <- sapply(val[1,],cbind) %*% xy.reduced$freq
@@ -196,7 +221,7 @@ bnb <- function (xvec, yvec, tol = 1e-8, showFlag=FALSE) {
   initial[1] <- min(initial[2:3]) * abs(cor.xy)
   initial[2:3] <-  initial[2:3] - initial[1]
   initial <- pmax(initial, 1e-5)
-  
+  # tmp.initial <<- initial
   result <- try(exp(optim(par = log(initial), fn = fn.log, gr = gr.log, control=list(fnscale=-1, abstol = tol), method = "BFGS")$par), silent=TRUE)
   if (class(result)=="try-error") {
     initial = rep(1,5)

@@ -10,9 +10,9 @@
 using namespace std;
 using namespace Rcpp;
 #define ITER_ALLOWANCE 100   // number of iterations allowed after finding the peak
-// #define DEBUG4
-// #define DEBUG5
-// #define DEBUG7
+#define DEBUG4
+#define DEBUG5
+#define DEBUG7
 
 // 3. EM
 // [[Rcpp::export]]
