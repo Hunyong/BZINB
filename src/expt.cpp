@@ -93,7 +93,7 @@ double log_R2_E1(int& m, double& a2)
 void dBvZINB_Expt(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
                   double &b1, double &b2, double &p1, double &p2, 
                   double &p3, double &p4,
-                  NumericVector &expt, NumericVector &s_i, NumericVector &info, int se)
+                  NumericVector &expt, NumericVector &s_i, NumericVector &info, int se, int bnb)
 {
   double t1 = (float)(b1 + b2 + 1) /(b1 + 1);
   double t2 = (float)(b1 + b2 + 1) /(b2 + 1);
@@ -336,18 +336,27 @@ void dBvZINB_Expt(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
   log_R2_E += (boost::math::digamma(a2) + log(b1)) * exp(adj_sum - adj_C) * l4_B;
   log_R2_E /= l_sum;
 
-  // cout << sum_AC << l1_B << sum_A << l1_B << l2_B << l3_B << l4_B << adj_C << adj_sum << endl;
-  double E_E1 = sum_AC * exp(adj_sum) * l1_B;
-  double E_E2 = sum_A * l2_B * exp(-adj_C + adj_sum);
-  double E_E3 = sum_A * l3_B * exp(-adj_C + adj_sum);
-  double E_E4 = sum_A * l4_B * exp(-adj_C + adj_sum);
+  double E_E1, E_E2, E_E3, E_E4;
+  if (bnb == 0) {
+    // cout << sum_AC << l1_B << sum_A << l1_B << l2_B << l3_B << l4_B << adj_C << adj_sum << endl;
+    E_E1 = sum_AC * exp(adj_sum) * l1_B;
+    E_E2 = sum_A * l2_B * exp(-adj_C + adj_sum);
+    E_E3 = sum_A * l3_B * exp(-adj_C + adj_sum);
+    E_E4 = sum_A * l4_B * exp(-adj_C + adj_sum);
+    
+    double su = E_E1 + E_E2 + E_E3 + E_E4;
+    E_E1 /= su;
+    E_E2 /= su;
+    E_E3 /= su;
+    E_E4 /= su;
+  } else {
+    E_E1 = 1;
+    E_E2 = 0;
+    E_E3 = 0;
+    E_E4 = 0;
+  }
   
-  double su = E_E1 + E_E2 + E_E3 + E_E4;
-  E_E1 /= su;
-  E_E2 /= su;
-  E_E3 /= su;
-  E_E4 /= su;
- 
+  
   double v_E = (y==0 ? (a0 + a2) * b2 *(E_E2 + E_E4) : y);
   //double v_E = (y==0 ? (a0 + a2) * b2 /(1 + (p1 + p3 * zeta_xy * exp(-(a0+a2) * log(1 + b2)))/(p2 + p4 * zeta_xy)) : y);
   
@@ -470,7 +479,7 @@ void dBvZINB_Expt_vec(IntegerVector &xvec, IntegerVector &yvec, IntegerVector &f
                       int &n, double &a0, double &a1, double &a2,
                       double &b1, double &b2, double &p1, double &p2, 
                       double &p3, double &p4,
-                      NumericVector &expt, NumericVector &s_i, NumericVector &info, int se) {
+                      NumericVector &expt, NumericVector &s_i, NumericVector &info, int se, int bnb) {
   int sumFreq = 0, x, y, f;
   
   // initialize result
@@ -486,7 +495,7 @@ void dBvZINB_Expt_vec(IntegerVector &xvec, IntegerVector &yvec, IntegerVector &f
     
     // add expectations with weights (freq)
     dBvZINB_Expt(x, y, f, a0, a1, a2,
-                 b1, b2, p1, p2, p3, p4, expt, s_i, info, se);
+                 b1, b2, p1, p2, p3, p4, expt, s_i, info, se, bnb);
   }
   
   // from sum to mean

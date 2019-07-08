@@ -59,7 +59,7 @@ double inv_digamma(double x, double y)
 // optimization
 
 
-void inv_digamma_vec(double lb[1], NumericVector &expt, double a[3], double idgam[3]) 
+void inv_digamma_vec(double lb[1], NumericVector &expt, Rcpp::NumericVector &a, double idgam[3]) 
 { 
   //double idgam[3];
   //double *idgam = new double[3];
@@ -102,7 +102,7 @@ void inv_digamma_vec(double lb[1], NumericVector &expt, double a[3], double idga
 // }
 
 // Derivative
-double hfunc(double lb[1], NumericVector &expt, double a[3], double idgam[3])
+double hfunc(double lb[1], NumericVector &expt, NumericVector &a, double idgam[3])
 {
   double result = 0.0;
   double obj;
@@ -142,7 +142,7 @@ double hfunc(double lb[1], NumericVector &expt, double a[3], double idgam[3])
 
 }
 
-void opt_lb(double lb[1], NumericVector &expt, double a[3], double idgam[3])
+void opt_lb(double lb[1], NumericVector &expt, NumericVector &a, double idgam[3])
 {
   int i = 1;
   //double* lb = log(b1);

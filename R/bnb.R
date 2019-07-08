@@ -44,19 +44,16 @@ dbnb.vec <- Vectorize(dbnb)
 #' @param a0,a1,a2 shape parameters of the latent gamma variables. must be positive.
 #' @param b1,b2 scale parameters for the latent gamma variables. must be positive.
 #' @param n number of observations.
-#' @param tol tolerance for judging convergence. \code{tol = 1e-8} by default.
-#' @param showFlag if \code{TRUE}, the updated parameter estimates for each iteration 
-#'   are printed out. If a positive integer, the updated parameter estimates for 
-#'   iterations greater than \code{showFlag} are printed out.
+#' @param em if \code{TRUE} in \code{bnb}, EM algorithm is applied. Otherwise, direct opitmation is used.
+#' @param tol,maxiter,vcov,initial,showFlag optional arguments applied only when \code{em} is \code{TRUE} in \code{bnb}.
 #' 
 #' @return 
 #'  \itemize{
 #'    \item \code{rbnb} gives a pair of random vectors following BNB distribution.
-#'    \item \code{bnb} gives the maximum likelihood estimates of a BNB pair.
+#'    \item \code{bnb} gives the maximum likelihood estimates of a BNB pair. 
+#'    Standard error and covariance matrix are provided when \code{em} is \code{TRUE}.
 #'    \item \code{lik.bnb} gives the log-likelihood of a set of parameters for a BNB pair.
-#'
 #'  }
-#'  
 #' 
 #' @examples
 #' # generating a pair of random vectors
@@ -179,7 +176,50 @@ dbnb.gr.vec <- Vectorize(dbnb.gr)
 ### 2. MLE
 #' @export
 #' @rdname bnb
-bnb <- function (xvec, yvec, tol = 1e-8, showFlag=FALSE) {
+bnb <- function (xvec, yvec, em = TRUE, tol = 1e-8, maxiter = 50000, vcov = TRUE, initial = NULL, showFlag = FALSE) {
+  .check.input(xvec, yvec)
+  if (!is.null(initial)) {
+    if (length(initial) != 5) {stop("length(initial) must be 5.")}
+    .check.ab(initial[1:5])
+  }
+  xvec = as.integer(round(xvec, digits = 0))
+  yvec = as.integer(round(yvec, digits = 0))
+  
+  # initial guess
+  xbar <- mean(xvec); ybar <- mean(yvec); xybar <- mean(c(xbar, ybar))
+  s2.x <- var(xvec); s2.y <- var(yvec); if(is.na(s2.x)) {s2.x <- s2.y <- 1}
+  cor.xy <- cor(xvec,yvec); if (is.na(cor.xy)) {cor.xy <- 0}
+  initial <- rep(NA,5)
+  initial[4] <- s2.x /xbar
+  initial[5] <- s2.y /ybar
+  initial[2:3] <- c(xbar,ybar)/initial[4:5]
+  initial[1] <- min(initial[2:3]) * abs(cor.xy)
+  initial[2:3] <-  initial[2:3] - initial[1]
+  initial <- pmax(initial, 1e-5)
+  
+  if (em) {
+    initial = c(initial, 1, 0, 0, 0)
+    result <- try(bzinb.base(xvec, yvec, initial = initial, tol = tol, maxiter = maxiter, 
+                             showFlag = showFlag, vcov = vcov, bnb = 1))
+    if (class(result)=="try-error") {
+      result <- list(coefficients = matrix(rep(NA, 10),
+                                           ncol = 2, dimnames = list(abp.names[1:5], c("Estimate", "Std.err"))), 
+                     lik = NA,
+                     iter = NA)
+      if (vcov) {
+        result$info = NA
+        result$vcov = NA
+      }
+    } else {
+      result$rho <- NULL
+      result$coefficients <- result$coefficients[1:5, ]
+    }
+  } else {
+    result <- bnb.direct (xvec, yvec, tol = tol, showFlag = showFlag)
+  }
+  return(result)
+}
+bnb.direct <- function (xvec, yvec, tol = 1e-8, showFlag=FALSE) {
   .check.input(xvec, yvec)
   xy.reduced <- as.data.frame(table(xvec,yvec))
   names(xy.reduced) <- c("x", "y","freq")
