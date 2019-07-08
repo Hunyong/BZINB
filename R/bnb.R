@@ -58,7 +58,7 @@ dbnb.vec <- Vectorize(dbnb)
 #' @examples
 #' # generating a pair of random vectors
 #' set.seed(1)
-#' data1 <- rbnb(n = 20, a0 = 1, a1 = 1, a2 = 1, 
+#' data1 <- rbnb(n = 100, a0 = 2, a1 = 1, a2 = 1, 
 #'                 b1 = 1, b2 = 1)
 #' 
 #' lik.bnb(xvec = data1[, 1], yvec = data1[ ,2], 
