@@ -1,5 +1,6 @@
 // [[Rcpp::depends(BH)]]
-#include <Rcpp.h>
+// #include <Rcpp.h>
+#include <RcppArmadillo.h>
 #include <iostream>
 #include <math.h>
 #include <numeric>
@@ -496,6 +497,11 @@ void dBvZINB_Expt_vec(IntegerVector &xvec, IntegerVector &yvec, IntegerVector &f
     // add expectations with weights (freq)
     dBvZINB_Expt(x, y, f, a0, a1, a2,
                  b1, b2, p1, p2, p3, p4, expt, s_i, info, se, bnb);
+    // if (i==0) Rcout << "expt" << endl;
+    // for (int j=0; j<12; j++) {
+    //   Rcout << expt[j] << " ";
+    // }
+    // Rcout << endl;
   }
   
   // from sum to mean

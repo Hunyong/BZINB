@@ -1,5 +1,5 @@
 // [[Rcpp::depends(BH)]]
-#include <Rcpp.h>
+#include <RcppArmadillo.h>
 #include <iostream>
 #include <math.h>
 #include <numeric>
@@ -82,7 +82,7 @@ List em(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
     }
     Rcout << endl;
 #endif
-    
+
     for(int i = 0;i < 4; i++)
     {
       param[5 + i] = expt[7 + i];

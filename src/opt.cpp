@@ -1,5 +1,6 @@
 // [[Rcpp::depends(BH)]]
-#include <Rcpp.h>
+//#include <Rcpp.h>
+#include <RcppArmadillo.h>
 #include <iostream>
 #include <math.h>
 #include <numeric>

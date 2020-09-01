@@ -5,12 +5,24 @@ em <- function(param2, xvec, yvec, freq, n, se, maxiter, tol, showFlag, bnb) {
     .Call('_bzinb_em', PACKAGE = 'bzinb', param2, xvec, yvec, freq, n, se, maxiter, tol, showFlag, bnb)
 }
 
+emReg <- function(param2, xvec, yvec, ZZ, WW, pZ, pW, n, se, maxiter, tol, showFlag, bnb) {
+    .Call('_bzinb_emReg', PACKAGE = 'bzinb', param2, xvec, yvec, ZZ, WW, pZ, pW, n, se, maxiter, tol, showFlag, bnb)
+}
+
 dBvZINB_Expt <- function(x, y, freq, a0, a1, a2, b1, b2, p1, p2, p3, p4, expt, s_i, info, se, bnb) {
     invisible(.Call('_bzinb_dBvZINB_Expt', PACKAGE = 'bzinb', x, y, freq, a0, a1, a2, b1, b2, p1, p2, p3, p4, expt, s_i, info, se, bnb))
 }
 
 dBvZINB_Expt_vec <- function(xvec, yvec, freq, n, a0, a1, a2, b1, b2, p1, p2, p3, p4, expt, s_i, info, se, bnb) {
     invisible(.Call('_bzinb_dBvZINB_Expt_vec', PACKAGE = 'bzinb', xvec, yvec, freq, n, a0, a1, a2, b1, b2, p1, p2, p3, p4, expt, s_i, info, se, bnb))
+}
+
+logLin <- function(mat, vec, n, p, sign, result) {
+    invisible(.Call('_bzinb_logLin', PACKAGE = 'bzinb', mat, vec, n, p, sign, result))
+}
+
+dBvZINB_Expt_mat <- function(xvec, yvec, ZZ, WW, n, pZ, pW, alpha, b1, b2, p1, p2, p3, p4, expt, s_i, info, se, bnb) {
+    invisible(.Call('_bzinb_dBvZINB_Expt_mat', PACKAGE = 'bzinb', xvec, yvec, ZZ, WW, n, pZ, pW, alpha, b1, b2, p1, p2, p3, p4, expt, s_i, info, se, bnb))
 }
 
 inv_digamma <- function(x, y) {
