@@ -106,7 +106,8 @@ void updateAE(NumericMatrix &ZZ, NumericMatrix &expt,  NumericVector &exptBar, N
     eta1[i] = AEnew[i];
   }
   for (int i = 0; i < 3; i++) {
-    error += fabs(exp(AEnew[i + p]) - alpha[i]);
+    // error += fabs(exp(AEnew[i + p]) - alpha[i]);
+    error += fabs(score(i, 0));
     alpha[i] = exp(AEnew[i + p]);
   }
 }
@@ -155,7 +156,8 @@ void updateEpsilon(NumericMatrix &ZZ, NumericMatrix &expt, NumericVector &b21,
   // getting errors and updating
   error = 0.0;
   for (int i = 0; i < p; i++) {
-    error += fabs(epsNew[i] - epsilon[i]);
+    // error += fabs(epsNew[i] - epsilon[i]);
+    error += fabs(score(i, 0));
     epsilon[i] = epsNew[i];
   }
 }
@@ -222,9 +224,12 @@ void updateGamma(NumericMatrix &WW, NumericMatrix &expt,
   // getting errors and updating
   error = 0.0;
   for (int i = 0; i < p; i++) {
-    error += fabs(gammaNew[i] - gamma1[i]);
-    error += fabs(gammaNew[i + p] - gamma2[i]);
-    error += fabs(gammaNew[i + 2*p] - gamma3[i]);
+    // error += fabs(gammaNew[i] - gamma1[i]);
+    // error += fabs(gammaNew[i + p] - gamma2[i]);
+    // error += fabs(gammaNew[i + 2*p] - gamma3[i]);
+    error += fabs(score(i, 0));
+    error += fabs(score(i + p, 0));
+    error += fabs(score(i + 2*p, 0));
     gamma1[i] = gammaNew[i];
     gamma2[i] = gammaNew[i + p];
     gamma3[i] = gammaNew[i + 2*p];

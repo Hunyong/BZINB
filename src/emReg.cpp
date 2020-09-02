@@ -11,11 +11,13 @@
 using namespace std;
 using namespace Rcpp;
 #define ITER_ALLOWANCE 100   // number of iterations allowed after finding the peak
-#define EPSILON2 1e-9
+// #define EPSILON1 1e-7  //for E-steps -> tol
+#define EPSILON2 1e-7  //for M-steps
+#define EPSILON3 1e-5  //for M-steps (gamma)
 // #define DEBUG4
 // #define DEBUG5
 // #define DEBUG7
-//#define DEBUG8
+// #define DEBUG8
 
 // 3. EM
 // [[Rcpp::export]]
@@ -74,6 +76,7 @@ List emReg(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
   IntegerVector iter(1, 1L);
   IntegerVector nonconv(1, 0L);
   NumericVector trajectory(maxiter + 1L, 0.0); 
+  NumericVector expt_i(12, 0.0);
 
   // storage for max_likelihood.
   double param_max[dim_param];
@@ -109,7 +112,7 @@ List emReg(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
   //cout << "maxiter = " << maxiter << " iter = " << iter[0] << endl;  
   while(maxiter >= iter[0] && param_diff > tol)
   {
-    //Rcout << "iter = " << iter[0] << endl;
+// if (iter[0]> 3528) Rcout << "iter = " << iter[0] << endl;
     if (iter[0] < 3) {
       ll_max = exptBar[0];
     }
@@ -152,7 +155,8 @@ List emReg(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
     Rcout << endl; */
 
     dBvZINB_Expt_mat(xvec, yvec, ZZ, WW, n, pZ, pW,
-                     alpha, b1, b2, p1, p2, p3, p4, expt, s_i, info, 0, bnb);
+                     alpha, b1, b2, p1, p2, p3, p4, 
+                     expt, s_i, info, 0, bnb, expt_i);
 
     // exptBar.
     for (int i = 0; i < 12; i++) {
@@ -175,7 +179,7 @@ List emReg(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
 //     Rcout << expt(i, j) << " ";
 //   }
 //   Rcout << endl;
-// } 
+// }
     
     
     if ((showFlag > 0) & (iter[0] >= showFlag)) {
@@ -281,15 +285,33 @@ List emReg(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
     
 // int counter = 0L;
     error = 1.0;
-    while ((error >= EPSILON2)) {
+    while ((error >= EPSILON3)) {
 // counter++;
-// if (counter > 100) break;
+// if (counter > 500) break;
+// if (counter >= 490) {
+//   Rcout << "score_gam = " << endl;
+//   for (int j =0; j < 3*pW; j++) {
+//     Rcout << score_gam[j] << " ";
+//   }  
+//   Rcout << endl;
+//   Rcout << "V_gam = " << endl;
+//   for (int i =0; i < 3*pW; i++) {
+//     for (int j =0; j < 3*pW; j++) {
+//       Rcout << V_gam[i + j * 3*pW] << " ";
+//     }  
+//     Rcout << endl;
+//   }
+// }
       // update epsilon
       updateGamma(WW, expt, p1, p2, p3, gamma1, gamma2, gamma3, 
                   gammaNew, V_gam, score_gam, n, pW, error);
 #ifdef DEBUG8
   Rcout << "gamma error = "<< error <<" ";
   for (int i =0; i < pW; i++) Rcout << "("<< gamma1[i] << ", "<< gamma2[i] << ", "<< gamma3[i] << ") ";
+  Rcout << "/ scr = ";
+  for (int i = 0; i < pW* 3; i++) {
+    Rcout << score(i, 0) << " ";
+  }
   Rcout << endl;
 #endif
       // update pi correspondingly

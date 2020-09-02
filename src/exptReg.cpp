@@ -39,11 +39,12 @@ void dBvZINB_Expt_mat(IntegerVector &xvec, IntegerVector &yvec,
                       NumericVector &p1, NumericVector &p2, 
                       NumericVector &p3, NumericVector &p4,
                       NumericMatrix &expt, NumericVector &s_i, 
-                      NumericVector &info, int se, int bnb) {
+                      NumericVector &info, int se, int bnb,
+                      NumericVector &expt_i) {
   int x, y, f = 1L;
   double a0 = alpha[0], a1 = alpha[1], a2 = alpha[2];
   double b1i, b2i, p1i, p2i, p3i, p4i;
-  NumericVector expt_i(12);
+  // NumericVector expt_i(12);
   
   // initialize result
   for (int i = 0; i < 12 * n; i++) {

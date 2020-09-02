@@ -63,7 +63,8 @@ void dBvZINB_Expt_mat(Rcpp::IntegerVector &xvec, Rcpp::IntegerVector &yvec,
                       Rcpp::NumericVector &alpha, Rcpp::NumericVector &b1, Rcpp::NumericVector &b2, 
                       Rcpp::NumericVector &p1, Rcpp::NumericVector &p2, 
                       Rcpp::NumericVector &p3, Rcpp::NumericVector &p4,
-                      Rcpp::NumericMatrix &expt, Rcpp::NumericVector &s_i, Rcpp::NumericVector &info, int se, int bnb);
+                      Rcpp::NumericMatrix &expt, Rcpp::NumericVector &s_i, 
+                      Rcpp::NumericVector &info, int se, int bnb, Rcpp::NumericVector &expt_i);
 void dBvZINB_Expt_direct(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
                          double &b1, double &b2, double &p1, double &p2, 
                          double &p3, double &p4,

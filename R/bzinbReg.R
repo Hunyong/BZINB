@@ -63,7 +63,7 @@ expt.names <- c("lik", "ER0", "ER1", "ER2", "ElogR0", "ElogR1", "ElogR2", "EE1",
 bzinb.base.reg <- 
   function (y1, y2, Z, W, 
             tol = 1e-8, maxiter = 50000, showFlag = FALSE, 
-            vcov = FALSE, bnb = 0) {
+            vcov = FALSE, bnb = 0, initial = NULL) {
   se = TRUE  # se is estimated by default
   n <- length(y1)
   pZ <- dim(Z)[2]
@@ -82,7 +82,7 @@ bzinb.base.reg <-
                  paste0("gamma2_", colnames(W)),
                  paste0("gamma3_", colnames(W)))
   # initial guess
-  # if (is.null(initial)) {
+  if (is.null(initial)) {
     y1bar <- mean(y1); y2bar <- mean(y2); xybar <- mean(c(y1bar, y2bar))
     s2.y1 <- var(y1); s2.y2 <- var(y2); if(is.na(s2.y1)|is.na(s2.y2)) {s2.y1 <- s2.y2 <- 1}
     cor.y <- cor(y1,y2); if (is.na(cor.y)) {cor.y <- 0}
@@ -101,9 +101,9 @@ bzinb.base.reg <-
     # initial <- pmax(initial, 1e-5)
     # if(is.na(sum(initial))) { initial[is.na(initial)] <- 1}
     
-  # } else {
-  #   names(initial) <- abp.names
-  # }
+  } else {
+    names(initial) <- aeg.names
+  }
   ## tmp.initial <<- initial
   param = initial
   lik = -Inf
@@ -228,7 +228,7 @@ bzinb.reg <- function(mu.formula,       # mu.formula = cbind(Sepal.Length, Sepal
                       nu.formula = ~ 1, # nu.formula = ~ Species + Petal.Width
                       data,
                       tol = 1e-8, maxiter = 50000, showFlag = FALSE,
-                      vcov = FALSE) {
+                      vcov = FALSE, initial = NULL) {
   
   formula = mu.formula
   formula[[3]] = rlang::expr(!!mu.formula[[3]] + !!nu.formula[[2]])
@@ -247,7 +247,7 @@ bzinb.reg <- function(mu.formula,       # mu.formula = cbind(Sepal.Length, Sepal
   ### from here!!!
   result <- try(bzinb.base.reg(y1 = y[, 1], y2 = y[, 2], 
                                Z = Z, W = W, tol = tol, maxiter = maxiter, 
-                               showFlag = showFlag, vcov = vcov))
+                               showFlag = showFlag, vcov = vcov, initial = initial))
   if (class(result)[1] == "try-error") {
     result <- list(coefficients = matrix(rep(NA, 18),
                                          ncol = 2, dimnames = list(abp.names, c("Estimate", "Std.err"))),
