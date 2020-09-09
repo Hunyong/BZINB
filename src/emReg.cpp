@@ -71,6 +71,7 @@ List emReg(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
   arma::mat score_gam(pW * 3, 1);
   
   // NumericVector expt(12, 0.0);
+  NumericVector s_i_abp(8, 0.0);
   NumericVector s_i(dim_param, 0.0);
   NumericVector info(se ? dim_param * dim_param : 1L, 0.0);  // if se = 1, 8 x 8 matrix, o/w a scalar zero.
   IntegerVector iter(1, 1L);
@@ -156,7 +157,7 @@ List emReg(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
 
     dBvZINB_Expt_mat(xvec, yvec, ZZ, WW, n, pZ, pW,
                      alpha, b1, b2, p1, p2, p3, p4, 
-                     expt, s_i, info, 0, bnb, expt_i);
+                     expt, s_i, s_i_abp, info, 0, bnb, expt_i);
 
     // exptBar.
     for (int i = 0; i < 12; i++) {
@@ -382,11 +383,12 @@ List emReg(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
   //     expt[i, l] = expt_max[i, l];
   //   }
   // }
-  // 
-  // if (se == 1) { //updating expt and calculate SE when called for.
-  //   dBvZINB_Expt_vec(xvec, yvec, freq, n, param[0], param[1], param[2], param[3], param[4], 
-  //                    param[5], param[6], param[7], param[8], expt, s_i, info, se, bnb);
-  // }
+
+  if (se == 1) { //updating expt and calculate SE when called for.
+    dBvZINB_Expt_mat(xvec, yvec, ZZ, WW, n, pZ, pW,
+                     alpha, b1, b2, p1, p2, p3, p4, 
+                     expt, s_i, s_i_abp, info, se, bnb, expt_i);
+  }
 
   // cout << "a " << param[0] << " " << param[1] << " " << param[2] << " b " << param[3] << " " << param[4] << " pi "
   //      << param[5] << " " << param[6] << " "  << param[7] << " " << param[8] << endl;

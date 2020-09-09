@@ -68,6 +68,7 @@ bzinb.base.reg <-
   n <- length(y1)
   pZ <- dim(Z)[2]
   pW <- dim(W)[2]
+  dim.param <- 3 + 2 * pZ + 3 * pW
   
   if (max(y2)==0) {
     stop("TBD!!!!!!!!!!")
@@ -75,6 +76,9 @@ bzinb.base.reg <-
   } # 9 params, lik, iter, pureCor, and 11 se's
   
   # info <- if (se) {matrix(0, ncol = 8, nrow = 8, dimnames = list(abp.names[-9], abp.names[-9]))} else {0}
+  ae.names  <- c("a0", "a1", "a2", 
+                 paste0("eta1_", colnames(Z)),
+                 paste0("eta2_", colnames(Z)))
   aeg.names <- c("a0", "a1", "a2", 
                  paste0("eta1_", colnames(Z)),
                  paste0("eta2_", colnames(Z)),
@@ -88,7 +92,7 @@ bzinb.base.reg <-
     cor.y <- cor(y1,y2); if (is.na(cor.y)) {cor.y <- 0}
     zero <- sum(y1 == 0 & y2 == 0) / n
 
-    initial <- rep(0.1, 3 + 2 * pZ + 3 * pW)
+    initial <- rep(0.1, dim.param)
     names(initial) <- aeg.names
     # initial[4] <- s2.x /ifelse(y1bar==0,1e-4, y1bar)
     # initial[5] <- s2.y /ifelse(y2bar==0,1e-4, y2bar)
@@ -127,95 +131,69 @@ bzinb.base.reg <-
                   n = n, se = as.integer(se), 
                   maxiter = as.integer(maxiter), tol = as.double(tol), 
                   showFlag = as.integer(showFlag), bnb = bnb)
-  # names(em.out) <- c("param2",              # "y1", "y2", "freq", "n", 
-  #                    "expt", "info",        # "se", 
-  #                    "iter",                # "maxiter", "tol", "showFlag", 
-  #                    "nonconv", "trajectory") # , "bnb")
-  # 
-  # # overwriting the original object
-  # param = setNames(em.out$param2, abp.names)
-  # expt  = setNames(em.out$expt, expt.names)
-  # info = if (se) {matrix(em.out$info, 8, 8, 
-  #                        dimnames = list(abp.names[-9], abp.names[-9]))} else 0
-  # iter  = em.out$iter
-  # nonconv = em.out$nonconv
-  # trajectory = em.out$trajectory
-  # 
-  # if (nonconv == 1) warning("The iteration exited before reaching convergence.")
-  # 
-  # # tmp.expt <<- expt
-  # # tmp.traj <<- lik.vec
-  # # underlying correlation (rho)
+  
+  em.out[[3]] <- matrix(em.out[[3]], dim.param, dim.param)
+  names(em.out) <- c("param2",              # "y1", "y2", "freq", "n",
+                     "expt", "info",        # "se",
+                     "iter",                # "maxiter", "tol", "showFlag",
+                     "nonconv", "trajectory") # , "bnb")
+
+  # overwriting the original object
+  param = setNames(em.out$param2, aeg.names)
+  expt  = setNames(em.out$expt, expt.names)
+  info = if (se) {matrix(em.out$info, dim.param, dim.param,
+                         dimnames = list(aeg.names, aeg.names))} else 0
+  iter  = em.out$iter
+  nonconv = em.out$nonconv
+  trajectory = em.out$trajectory
+
+  if (nonconv == 1) warning("The iteration exited before reaching convergence.")
+
+  # tmp.expt <<- expt
+  # tmp.traj <<- lik.vec
+  # underlying correlation (rho)
   # rho <- param[1]/sqrt((param[1] + param[2]) * (param[1] + param[3])) *
   #   sqrt(param[4] * param[5] /(param[4] + 1) /(param[5] + 1))
   # logit.rho <- qlogis(rho)
-  # 
+
   # if (bnb) {info = info[1:5, 1:5]}
   # 
-  # if (se) {
-  #   par.names <- if (bnb) {abp.names[1:5]} else {abp.names}
-  #   dim.std <- if (bnb) {7} else {11}
-  #   fullrank <- if (bnb) {5} else {8}
-  #   
-  #   qr.info <- try(qr(info))
-  #   if (class(qr.info)[1] == "try-error") {
-  #     warning ("The information matrix has NA/NaN/Inf and thus the standard error is not properly estimatd.")
-  #     std.param = setNames(rep(NA, dim.std), c(par.names, "rho", "logit.rho"))
-  #     cov.mat <- NA
-  #   } else if (qr(info)$rank < fullrank) {
-  #     warning ("The information matrix is (essentially) not full rank, and thus the standard error is not reliable.")
-  #     std.param = setNames(rep(NA, dim.std), c(par.names, "rho", "logit.rho"))
-  #     cov.mat <- NA
-  #   } else {
-  #     cov.mat <- try(solve(info))
-  #     if (class(cov.mat)[1] == "try-error") {
-  #       std.param = setNames(rep(NA, dim.std), c(par.names, "rho", "logit.rho"))
-  #       cov.mat <- NA
-  #     } else {
-  #       # variance of p4 hat
-  #       if (!bnb) var.p4 <- sum (cov.mat[6:8, 6:8]) # = sum_i,j cov(pi, pj)
-  #       
-  #       # variance of rho hat
-  #       # rho <- a0/sqrt((a0 + a1) * (a0 + a2)) *sqrt(b1 *b2 /(b1 + 1) /(b2 + 1))
-  #       
-  #       # d.g <- rho * c(1/a0 - 1/{2*(a0 + a1)} - 1/{2*(a0 + a2)}, - 1/{2*(a0 + a1)}, - 1/{2*(a0 + a2)},
-  #       #                1/{2 *b1 *(b1 + 1)}, 1/{2 *b2 *(b2 + 1)})
-  #       d.g <- rho * c(1/param[1] - 1/{2*(param[1] + param[2])} - 1/{2*(param[1] + param[3])}, 
-  #                      - 1/{2*(param[1] + param[2])}, 
-  #                      - 1/{2*(param[1] + param[3])},
-  #                      1/{2 *param[4] *(param[4] + 1)}, 
-  #                      1/{2 *param[5] *(param[5] + 1)})
-  #       
-  #       var.rho <- t(d.g) %*% cov.mat[1:5, 1:5] %*% d.g
-  #       
-  #       # variance of logit(rho hat)
-  #       var.logit.rho <- var.rho / rho^2 / (1-rho)^2
-  #       # std.param = sqrt(c(setNames(diag(cov.mat), abp.names[1:8]), 
-  #       #                    p4 = var.p4, rho=var.rho, logit.rho = var.logit.rho))
-  #       if (!bnb) {
-  #         std.param = sqrt(c(diag(cov.mat), 
-  #                p4 = var.p4, rho=var.rho, logit.rho = var.logit.rho))
-  #       } else {
-  #         std.param = sqrt(c(diag(cov.mat), rho=var.rho, logit.rho = var.logit.rho))
-  #       }
-  #       
-  #     }
-  #   } 
-  #   
-  # }
-  # 
-  # result <- list(rho = matrix(c(rho, logit.rho, if(se) std.param[c("rho", "logit.rho")] else rep(NA, 2)),
-  #                             ncol = 2, dimnames = list(c("rho", "logit.rho"), c("Estimate", "Std.err"))),
-  #                coefficients = matrix(c(param, if(se) std.param[1:9] else rep(NA, 9)),
-  #                                      ncol = 2, dimnames = list(abp.names, c("Estimate", "Std.err"))), 
-  #                lik = expt[1],
-  #                iter = iter)
-  # if (se & vcov) {
-  #   result$info = info
-  #   result$vcov = cov.mat
-  # }
-  # return(result)
-  em.out
+  if (se) {
+    par.names <- if (bnb) ae.names else aeg.names
+    dim.par <- length(par.names)
+
+    qr.info <- try(qr(info))
+    if (class(qr.info)[1] == "try-error") {
+      warning ("The information matrix has NA/NaN/Inf and thus the standard error is not properly estimatd.")
+      std.param = setNames(rep(NA, dim.par), par.names)
+      cov.mat <- NA
+    } else if (qr(info)$rank < dim.par) {
+      warning ("The information matrix is (essentially) not full rank, and thus the standard error is not reliable.")
+      std.param = setNames(rep(NA, dim.par), par.names)
+      cov.mat <- NA
+    } else {
+      cov.mat <- try(solve(info))
+      if (class(cov.mat)[1] == "try-error") {
+        std.param = setNames(rep(NA, dim.par), par.names)
+        cov.mat <- NA
+      } else {
+        std.param = sqrt(diag(cov.mat))
+      }
+    }
+
+  }
+
+  result <- list(coefficients = 
+                   matrix(c(param, if (se) std.param else rep(NA, dim.param)),
+                          ncol = 2, dimnames = list(abp.names, c("Estimate", "Std.err"))),
+                 lik = expt[1],
+                 iter = iter)
+  if (se & vcov) {
+    result$info = info
+    result$vcov = cov.mat
+  }
+  
+  return(result)
 }
 
 #' @export

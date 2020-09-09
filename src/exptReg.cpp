@@ -38,7 +38,7 @@ void dBvZINB_Expt_mat(IntegerVector &xvec, IntegerVector &yvec,
                       NumericVector &alpha, NumericVector &b1, NumericVector &b2, 
                       NumericVector &p1, NumericVector &p2, 
                       NumericVector &p3, NumericVector &p4,
-                      NumericMatrix &expt, NumericVector &s_i, 
+                      NumericMatrix &expt, NumericVector &s_i, NumericVector &s_i_abp,
                       NumericVector &info, int se, int bnb,
                       NumericVector &expt_i) {
   int x, y, f = 1L;
@@ -74,11 +74,44 @@ void dBvZINB_Expt_mat(IntegerVector &xvec, IntegerVector &yvec,
                  b1i, b2i, p1i, p2i, p3i, p4i,
                  // b1[i], b2[i], p1[i], p2[i], p3[i], p4[i],
                  // &b1 + i, &b2 + i, &p1 + i, &p2 + i, &p3 + i, &p4 + i,
-                 expt_i, s_i, info, se, bnb);
+                 expt_i, s_i_abp, info, se, bnb, 1);
                  //*expt_i, s_i, info, se, bnb);
     // expt( _, i) = expt_i;
     for (int j = 0; j < 12; j++) expt(j, i) = expt_i[j];
     
+    
+    if (se) {
+      int offset;
+      for (int j = 0; j < 3; j++) s_i[j] = s_i_abp[j];
+      offset = 3;
+      for (int j = 0; j < pZ; j++) s_i[j + offset] = s_i_abp[3] * b1i * ZZ[i + n * j];
+      offset += pZ;
+      //for (int j = 0; j < pZ; j++) s_i[j + offset] = s_i_abp[4] * b2i/b1i * ZZ[i + n * j]; // for epsilon
+      for (int j = 0; j < pZ; j++) s_i[j + offset] = s_i_abp[4] * b2i * ZZ[i + n * j]; // for eta2
+      offset += pZ;
+      int offset2 = offset + pW;
+      int offset3 = offset2 + pW;
+      for (int j = 0; j < pW; j++) {
+          s_i[j + offset]   = s_i_abp[5] * p1i * (1-p1i) * WW[i + n * j];
+          s_i[j + offset]  += s_i_abp[6] * p1i * ( -p2i) * WW[i + n * j];
+          s_i[j + offset]  += s_i_abp[7] * p1i * ( -p3i) * WW[i + n * j];
+          s_i[j + offset2]  = s_i_abp[5] * p2i * ( -p1i) * WW[i + n * j];
+          s_i[j + offset2] += s_i_abp[6] * p2i * (1-p2i) * WW[i + n * j];
+          s_i[j + offset2] += s_i_abp[7] * p2i * ( -p3i) * WW[i + n * j];
+          s_i[j + offset3]  = s_i_abp[5] * p3i * ( -p1i) * WW[i + n * j];
+          s_i[j + offset3] += s_i_abp[6] * p3i * ( -p2i) * WW[i + n * j];
+          s_i[j + offset3] += s_i_abp[7] * p3i * (1-p3i) * WW[i + n * j];
+      }
+      
+      offset = offset3 + pW;
+      for (int j = 0; j < offset; j++) {
+        for (int k = 0; k < offset; k++) {
+          info[j + offset*k] += s_i[j] * s_i[k];
+        }
+      }
+      
+//info[0,0] = s_i[0]
+    }
     // if (i==0) Rcout << "expt" << endl;
     // for (int j=0; j<12; j++) {
     //   Rcout << expt_i[j] << " ";
@@ -94,6 +127,5 @@ void dBvZINB_Expt_mat(IntegerVector &xvec, IntegerVector &yvec,
 //   Rcout << "j = " << j << ", expt = " << expt_i[j] << " " << endl;  
 // }
 
-// if (i>0) break;
   }
 }

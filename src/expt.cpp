@@ -94,7 +94,8 @@ double log_R2_E1(int& m, double& a2)
 void dBvZINB_Expt(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
                   double &b1, double &b2, double &p1, double &p2, 
                   double &p3, double &p4,
-                  NumericVector &expt, NumericVector &s_i, NumericVector &info, int se, int bnb)
+                  NumericVector &expt, NumericVector &s_i, NumericVector &info, 
+                  int se, int bnb, int infoReg)
 {
   double t1 = (float)(b1 + b2 + 1) /(b1 + 1);
   double t2 = (float)(b1 + b2 + 1) /(b2 + 1);
@@ -402,6 +403,15 @@ void dBvZINB_Expt(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
         Dvec[4] += l_A_mat(i, j) * exp(adj_sum) * l_C_mat(i, j) * (y/b2 - (x + y - i - j + a0) / (b1 + b2 + 1) - (a2 + j)/(b2 + 1));
       }
     }
+    // if (infoReg) {
+    //   // scores for (beta1, delta) parametrization instead of (beta1, beta2).
+    //   for (int i = 0; i <= x; i++) {
+    //     for (int j = 0; j <= y; j++) {
+    //       Dvec[3] += l_A_mat(i, j) * exp(adj_sum) * l_C_mat(i, j) * (y/b1 - (a2 + j)/(b2 + 1) * b2/b1);
+    //     }
+    //   }
+    //   Dvec[4] *= b1;
+    // }
 //cout << "Dvec (line 343): " << Dvec[0] << endl; 
     // part II (adding & multiplying constants)
     //l1_b has pi_1 multiplied, but for Dvec[0] ~ Dvec[4] pi_1 should not be removed, but later this will be cancelled by not doing lines around 384.
@@ -454,11 +464,17 @@ void dBvZINB_Expt(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
     s_i[0] = Dvec[0] + Dvec[5] + Dvec[7];
     s_i[1] = Dvec[1] + Dvec[5];
     s_i[2] = Dvec[2] + Dvec[7];
+    // if (!infoReg) { // scores for (b1, b2) -> (b1, delta) parametrization
     s_i[3] = Dvec[3] + Dvec[6];
     s_i[4] = Dvec[4] + Dvec[8];
+    // } else {
+    //   s_i[3] = Dvec[3] + Dvec[6] + Dvec[8] * b2/b1;
+    //   s_i[4] = Dvec[4] + Dvec[8] * b1;
+    // }
     s_i[5] = sum_AC * exp(adj_sum) * l1_B * exp(adj_A + adj_C - adj_B1 - adj_sum) - zeta_xy; //f_BNB(x, y)
     s_i[6] = fy - zeta_xy;  // fy is by default 0 if x == 0;
     s_i[7] = fx - zeta_xy;  // fx is by default 0 if y == 0;
+    
     
     // Finally, divide s_i by the density (f_bzinb)
     for (int i = 0; i <8; i++) {
@@ -467,9 +483,11 @@ void dBvZINB_Expt(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
 //cout << s_i[i] << endl;
     }
     
-    for (int i = 0; i < 8; i++) {
-      for (int j = 0; j < 8; j++) {
-        info[i + 8*j] += s_i[i] * s_i[j] * freq;
+    if (!infoReg) {
+      for (int i = 0; i < 8; i++) {
+        for (int j = 0; j < 8; j++) {
+          info[i + 8*j] += s_i[i] * s_i[j] * freq;
+        }
       }
     }
   }
@@ -496,7 +514,7 @@ void dBvZINB_Expt_vec(IntegerVector &xvec, IntegerVector &yvec, IntegerVector &f
     
     // add expectations with weights (freq)
     dBvZINB_Expt(x, y, f, a0, a1, a2,
-                 b1, b2, p1, p2, p3, p4, expt, s_i, info, se, bnb);
+                 b1, b2, p1, p2, p3, p4, expt, s_i, info, se, bnb, 0);
     // if (i==0) Rcout << "expt" << endl;
     // for (int j=0; j<12; j++) {
     //   Rcout << expt[j] << " ";
