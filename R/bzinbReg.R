@@ -185,7 +185,7 @@ bzinb.base.reg <-
 
   result <- list(coefficients = 
                    matrix(c(param, if (se) std.param else rep(NA, dim.param)),
-                          ncol = 2, dimnames = list(abp.names, c("Estimate", "Std.err"))),
+                          ncol = 2, dimnames = list(par.names, c("Estimate", "Std.err"))),
                  lik = expt[1],
                  iter = iter)
   if (se & vcov) {
