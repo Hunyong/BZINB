@@ -19,7 +19,7 @@ using namespace Rcpp;
 List em(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec, 
         IntegerVector &freq, int &n, 
         int &se, int &maxiter, double &tol, int showFlag,
-        int bnb)
+        int zi)
 {
   NumericVector param = clone(param2);
   double param_diff = 1.0;
@@ -55,13 +55,13 @@ List em(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
       // cout << "param [" << i << "] = " << param[i] << " ";
     }
     dBvZINB_Expt_vec(xvec, yvec, freq, n, param[0], param[1], param[2], param[3], param[4], 
-                     param[5], param[6], param[7], param[8], expt, s_i, info, 0, bnb);
+                     param[5], param[6], param[7], param[8], expt, s_i, info, 0, zi);
     
     if ((showFlag > 0) & (iter[0] >= showFlag)) {
       Rcout << "iter " << iter[0]  << " lik " << expt[0] <<
         ", a0 " << param[0] << ", a1 " << param[1] << ", a2 " << param[2] <<
           ", b1 " << param[3] << ", b2 " << param[4];
-      if (!bnb) {
+      if (zi == 3) {
         Rcout << ", p1 " << param[5] << ", p2 " << param[6] << ", p3 " << param[7] << 
           ", p4 " << param[8];
       }
@@ -155,7 +155,7 @@ List em(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
 
   if (se == 1) { //updating expt and calculate SE when called for.
     dBvZINB_Expt_vec(xvec, yvec, freq, n, param[0], param[1], param[2], param[3], param[4], 
-                     param[5], param[6], param[7], param[8], expt, s_i, info, se, bnb);
+                     param[5], param[6], param[7], param[8], expt, s_i, info, se, zi);
   }
 
   // cout << "a " << param[0] << " " << param[1] << " " << param[2] << " b " << param[3] << " " << param[4] << " pi "
@@ -165,7 +165,7 @@ List em(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
   // }
   
   // List z = List::create(param, xvec, yvec, freq, n, expt, info, se, 
-  //                       iter, nonconv, trajectory, bnb);
+  //                       iter, nonconv, trajectory, zi);
   List z = List::create(param, expt, info, iter, nonconv, trajectory);
   
   return z;

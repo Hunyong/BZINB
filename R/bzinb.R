@@ -277,7 +277,7 @@ abp.names <- c("a0", "a1", "a2", "b1", "b2", "p1", "p2", "p3", "p4") # global va
 expt.names <- c("lik", "ER0", "ER1", "ER2", "ElogR0", "ElogR1", "ElogR2", "EE1", "EE2", "EE3", "EE4", "EV")
 
 bzinb.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=50000, showFlag=FALSE, vcov = FALSE,
-                        bnb = 0) {
+                        zi = 3) {
   se = TRUE  # se is estimated by default
   xy.reduced <- as.data.frame(table(xvec,yvec))
   names(xy.reduced) <- c("x", "y","freq")
@@ -323,11 +323,11 @@ bzinb.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=50000, s
   em.out <- em(param2 = param, xvec = xy.reduced$x, yvec = xy.reduced$y, 
        freq = xy.reduced$freq, n = n.reduced, se = as.integer(se), 
        maxiter = as.integer(maxiter), tol = as.double(tol), 
-       showFlag = as.integer(showFlag), bnb = bnb)
+       showFlag = as.integer(showFlag), zi = zi)
   names(em.out) <- c("param2",              # "xvec", "yvec", "freq", "n", 
                      "expt", "info",        # "se", 
                      "iter",                # "maxiter", "tol", "showFlag", 
-                     "nonconv", "trajectory") # , "bnb")
+                     "nonconv", "trajectory") # , "zi")
   
   # overwriting the original object
   param = setNames(em.out$param2, abp.names)
@@ -347,12 +347,12 @@ bzinb.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=50000, s
     sqrt(param[4] * param[5] /(param[4] + 1) /(param[5] + 1))
   logit.rho <- qlogis(rho)
   
-  if (bnb) {info = info[1:5, 1:5]}
+  if (!zi) {info = info[1:5, 1:5]}
   
   if (se) {
-    par.names <- if (bnb) {abp.names[1:5]} else {abp.names}
-    dim.std <- if (bnb) {7} else {11}
-    fullrank <- if (bnb) {5} else {8}
+    par.names <- if (!zi) {abp.names[1:5]} else {abp.names}
+    dim.std <- if (!zi) {7} else {11}
+    fullrank <- if (!zi) {5} else {8}
     
     qr.info <- try(qr(info))
     if (class(qr.info)[1] == "try-error") {
@@ -370,7 +370,7 @@ bzinb.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=50000, s
         cov.mat <- NA
       } else {
         # variance of p4 hat
-        if (!bnb) var.p4 <- sum (cov.mat[6:8, 6:8]) # = sum_i,j cov(pi, pj)
+        if (zi) var.p4 <- sum (cov.mat[6:8, 6:8]) # = sum_i,j cov(pi, pj)
         
         # variance of rho hat
         # rho <- a0/sqrt((a0 + a1) * (a0 + a2)) *sqrt(b1 *b2 /(b1 + 1) /(b2 + 1))
@@ -389,7 +389,7 @@ bzinb.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=50000, s
         var.logit.rho <- var.rho / rho^2 / (1-rho)^2
         # std.param = sqrt(c(setNames(diag(cov.mat), abp.names[1:8]), 
         #                    p4 = var.p4, rho=var.rho, logit.rho = var.logit.rho))
-        if (!bnb) {
+        if (zi) {
           std.param = sqrt(c(diag(cov.mat), 
                  p4 = var.p4, rho=var.rho, logit.rho = var.logit.rho))
         } else {
@@ -432,7 +432,7 @@ bzinb <- function(xvec, yvec, initial = NULL, tol = 1e-8, maxiter = 50000, showF
   xvec = as.integer(round(xvec, digits = 0))
   yvec = as.integer(round(yvec, digits = 0))
   result <- try(bzinb.base(xvec, yvec, initial = initial, tol = tol, maxiter = maxiter, 
-                           showFlag = showFlag, vcov = vcov))
+                           showFlag = showFlag, vcov = vcov, zi = 3), silent = TRUE)
   if (class(result)[1] == "try-error") {
     result <- list(rho = matrix(rep(NA, 4),
                                 ncol = 2, dimnames = list(c("rho", "logit.rho"), c("Estimate", "Std.err"))),
@@ -563,7 +563,7 @@ bzinb.se <- function(xvec, yvec, a0, a1, a2, b1, b2, p1, p2, p3, p4,
   dBvZINB_Expt_vec (xvec = xy.reduced$x, yvec = xy.reduced$y, freq = xy.reduced$freq, n = n.reduced, 
                     a0 = param[1], a1 = param[2], a2 = param[3], b1 = param[4], b2 = param[5], 
                     p1 = param[6], p2 = param[7], p3 = param[8], p4 = param[9], 
-                    expt = expt, s_i = s_i, info = info, se = 1, bnb = 1)
+                    expt = expt, s_i = s_i, info = info, se = 1, zi = 3)
   
   
   # inverse of info

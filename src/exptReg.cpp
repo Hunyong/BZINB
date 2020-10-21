@@ -39,7 +39,7 @@ void dBvZINB_Expt_mat(IntegerVector &xvec, IntegerVector &yvec,
                       NumericVector &p1, NumericVector &p2, 
                       NumericVector &p3, NumericVector &p4,
                       NumericMatrix &expt, NumericVector &s_i, NumericVector &s_i_abp,
-                      NumericVector &info, int se, int bnb,
+                      NumericVector &info, int se, int zi,
                       NumericVector &expt_i) {
   int x, y, f = 1L;
   double a0 = alpha[0], a1 = alpha[1], a2 = alpha[2];
@@ -47,9 +47,10 @@ void dBvZINB_Expt_mat(IntegerVector &xvec, IntegerVector &yvec,
   // NumericVector expt_i(12);
   
   // initialize result
-  for (int i = 0; i < 12 * n; i++) {
-    expt[i] = 0.0;
-  }
+  // for (int i = 0; i < 12 * n; i++) {
+  //   expt[i] = 0.0;
+  // }
+  expt.fill(0.0);
   
   for (int i = 0; i < n; i++) {
     x = xvec[i];
@@ -64,9 +65,11 @@ void dBvZINB_Expt_mat(IntegerVector &xvec, IntegerVector &yvec,
     expt_i = expt( _, i);
     // sumFreq += freq[i];
 
-// Rcout << "before " << endl;
+Rcout << "abp " << a0 << " " << a1<< " " <<  a2 << " " << 
+               b1i<< " " <<  b2i<< " " <<  p1i<< " " << p2i<< " " <<  p3i<< " " << p4i <<endl;
+// Rcout << "[exptReg.cpp] expt.mat before " << endl;
 // for (int j=0; j<12; j++) {
-//   Rcout << "j = " << j << ", expt = " << expt[j + i * 12] << " " << endl;  
+//   Rcout << "j = " << j << ", expt = " << expt[j + i * 12] << " " << endl;
 // }
     
     // add expectations with weights (freq)
@@ -74,10 +77,14 @@ void dBvZINB_Expt_mat(IntegerVector &xvec, IntegerVector &yvec,
                  b1i, b2i, p1i, p2i, p3i, p4i,
                  // b1[i], b2[i], p1[i], p2[i], p3[i], p4[i],
                  // &b1 + i, &b2 + i, &p1 + i, &p2 + i, &p3 + i, &p4 + i,
-                 expt_i, s_i_abp, info, se, bnb, 1);
-                 //*expt_i, s_i, info, se, bnb);
+                 expt_i, s_i_abp, info, se, zi, 1);
+                 //*expt_i, s_i, info, se, zi);
     // expt( _, i) = expt_i;
     for (int j = 0; j < 12; j++) expt(j, i) = expt_i[j];
+// Rcout << "[exptReg.cpp] expt.mat after " << endl;
+// for (int j=0; j<12; j++) {
+//   Rcout << "j = " << j << ", expt = " << expt(j, i) << " " << endl;
+// }
     
     
     if (se) {
@@ -91,23 +98,51 @@ void dBvZINB_Expt_mat(IntegerVector &xvec, IntegerVector &yvec,
       offset += pZ;
       int offset2 = offset + pW;
       int offset3 = offset2 + pW;
-      for (int j = 0; j < pW; j++) {
-          s_i[j + offset]   = s_i_abp[5] * p1i * (1-p1i) * WW[i + n * j];
-          s_i[j + offset]  += s_i_abp[6] * p1i * ( -p2i) * WW[i + n * j];
-          s_i[j + offset]  += s_i_abp[7] * p1i * ( -p3i) * WW[i + n * j];
-          s_i[j + offset2]  = s_i_abp[5] * p2i * ( -p1i) * WW[i + n * j];
-          s_i[j + offset2] += s_i_abp[6] * p2i * (1-p2i) * WW[i + n * j];
-          s_i[j + offset2] += s_i_abp[7] * p2i * ( -p3i) * WW[i + n * j];
-          s_i[j + offset3]  = s_i_abp[5] * p3i * ( -p1i) * WW[i + n * j];
-          s_i[j + offset3] += s_i_abp[6] * p3i * ( -p2i) * WW[i + n * j];
-          s_i[j + offset3] += s_i_abp[7] * p3i * (1-p3i) * WW[i + n * j];
+      int offset4;
+      
+      if (zi == 3) {
+        for (int j = 0; j < pW; j++) {
+            s_i[j + offset]   = s_i_abp[5] * p1i * (1-p1i) * WW[i + n * j];
+            s_i[j + offset]  += s_i_abp[6] * p1i * ( -p2i) * WW[i + n * j];
+            s_i[j + offset]  += s_i_abp[7] * p1i * ( -p3i) * WW[i + n * j];
+            s_i[j + offset2]  = s_i_abp[5] * p2i * ( -p1i) * WW[i + n * j];
+            s_i[j + offset2] += s_i_abp[6] * p2i * (1-p2i) * WW[i + n * j];
+            s_i[j + offset2] += s_i_abp[7] * p2i * ( -p3i) * WW[i + n * j];
+            s_i[j + offset3]  = s_i_abp[5] * p3i * ( -p1i) * WW[i + n * j];
+            s_i[j + offset3] += s_i_abp[6] * p3i * ( -p2i) * WW[i + n * j];
+            s_i[j + offset3] += s_i_abp[7] * p3i * (1-p3i) * WW[i + n * j];
+Rcout << "si[" << j << " + offset123] = " << s_i[j + offset] << " " << s_i[j + offset2] << " " << s_i[j + offset3] << " " << endl;
+        }
+        offset4 = offset3 + pW;
+      } else if (zi == 1) {
+Rcout << "s[" << i << "]_abp = ";
+        for (int j = 0; j < 8; j++) {
+          Rcout << s_i_abp[j] << " ";
+        }
+Rcout << endl;        
+        for (int j = 0; j < pW; j++) {
+          s_i[j + offset] += s_i_abp[6] * p2i * (1-p2i) * WW[i + n * j];
+Rcout << "s[" << i << "][" << j << " + offset] = " << s_i[j + offset] << " " << endl;
+        }
+        offset4 = offset + pW;
+      } else if (zi == 2) {
+        for (int j = 0; j < pW; j++) {
+          s_i[j + offset] += s_i_abp[7] * p3i * (1-p3i) * WW[i + n * j];
+Rcout << "si[" << j << " + offset] = " << s_i[j + offset] << " " << endl;
+        }
+        offset4 = offset + pW;
+      } else {
+        offset4 = offset;
       }
       
-      offset = offset3 + pW;
-      for (int j = 0; j < offset; j++) {
-        for (int k = 0; k < offset; k++) {
-          info[j + offset*k] += s_i[j] * s_i[k];
+      // Rcout << "info (before after)" << endl;
+      for (int j = 0; j < offset4; j++) {
+        for (int k = 0; k < offset4; k++) {
+          // Rcout << "(" << info[j + offset4*k] << ", ";
+          info[j + offset4*k] += s_i[j] * s_i[k];
+          // Rcout << info[j + offset4*k] << ") ";
         }
+        // Rcout << endl;
       }
       
 //info[0,0] = s_i[0]

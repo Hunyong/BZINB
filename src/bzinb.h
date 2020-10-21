@@ -28,7 +28,7 @@ void updateGamma(Rcpp::NumericMatrix &WW, Rcpp::NumericMatrix &expt,
                  Rcpp::NumericVector &gamma1, Rcpp::NumericVector &gamma2, Rcpp::NumericVector &gamma3,
                  Rcpp::NumericVector &gammaNew, 
                  arma::mat &V, arma::mat &score, 
-                 int &n, int &p, double &error);
+                 int &n, int &p, double &error, Rcpp::IntegerVector &zz);
 void l1(int& x, int& y, double& a0, double& a1, double& a2, int &k, int& m, 
         double& result, double adjj = 0);
 void l1_c (double& t1, double& t2, int& k, int& m, double& result, double adjj);
@@ -49,14 +49,14 @@ void dBvZINB_Expt(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
                   double &b1, double &b2, double &p1, double &p2,
                   double &p3, double &p4,
                   Rcpp::NumericVector &expt, Rcpp::NumericVector &s_i, Rcpp::NumericVector &info,
-                  int se, int bnb, int infoReg);
+                  int se, int zi, int infoReg);
 void dBvZINB_Expt_vec(Rcpp::IntegerVector &xvec, Rcpp::IntegerVector &yvec, 
                       Rcpp::IntegerVector &freq, 
                       int &n, double &a0, double &a1, double &a2,
                       double &b1, double &b2, double &p1, double &p2, 
                       double &p3, double &p4,
                       Rcpp::NumericVector &expt, Rcpp::NumericVector &s_i, Rcpp::NumericVector &info,
-                      int se, int bnb);
+                      int se, int zi);
 void dBvZINB_Expt_mat(Rcpp::IntegerVector &xvec, Rcpp::IntegerVector &yvec,
                       Rcpp::NumericMatrix &ZZ, Rcpp::NumericMatrix &WW,
                       int &n, int &pZ, int &pW,
@@ -64,7 +64,7 @@ void dBvZINB_Expt_mat(Rcpp::IntegerVector &xvec, Rcpp::IntegerVector &yvec,
                       Rcpp::NumericVector &p1, Rcpp::NumericVector &p2, 
                       Rcpp::NumericVector &p3, Rcpp::NumericVector &p4,
                       Rcpp::NumericMatrix &expt, Rcpp::NumericVector &s_i, Rcpp::NumericVector &s_i_abp,
-                      Rcpp::NumericVector &info, int se, int bnb, Rcpp::NumericVector &expt_i);
+                      Rcpp::NumericVector &info, int se, int zi, Rcpp::NumericVector &expt_i);
 void dBvZINB_Expt_direct(int &x, int &y, int &freq, double &a0, double &a1, double &a2,
                          double &b1, double &b2, double &p1, double &p2, 
                          double &p3, double &p4,
@@ -88,12 +88,12 @@ void opt_lb(double lb[1], Rcpp::NumericVector &expt, Rcpp::NumericVector &a,
 
 Rcpp::List em(Rcpp::NumericVector& param2, Rcpp::IntegerVector &xvec, Rcpp::IntegerVector &yvec, 
               Rcpp::IntegerVector &freq, int &n, int &se, int &maxiter, double &tol, int showFlag, 
-              int bnb);
+              int zi);
 
 Rcpp::List emReg(Rcpp::NumericVector& param2, Rcpp::IntegerVector &xvec, Rcpp::IntegerVector &yvec, 
                  Rcpp::NumericMatrix& ZZ, Rcpp::NumericMatrix& WW,
                  int &pZ, int &pW,
                  int &n, int &se, int &maxiter, double &tol, int showFlag,
-                 int bnb);
+                 int zi);
 
 #endif

@@ -7,8 +7,8 @@
 using namespace Rcpp;
 
 // em
-List em(NumericVector& param2, IntegerVector& xvec, IntegerVector& yvec, IntegerVector& freq, int& n, int& se, int& maxiter, double& tol, int showFlag, int bnb);
-RcppExport SEXP _bzinb_em(SEXP param2SEXP, SEXP xvecSEXP, SEXP yvecSEXP, SEXP freqSEXP, SEXP nSEXP, SEXP seSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP showFlagSEXP, SEXP bnbSEXP) {
+List em(NumericVector& param2, IntegerVector& xvec, IntegerVector& yvec, IntegerVector& freq, int& n, int& se, int& maxiter, double& tol, int showFlag, int zi);
+RcppExport SEXP _bzinb_em(SEXP param2SEXP, SEXP xvecSEXP, SEXP yvecSEXP, SEXP freqSEXP, SEXP nSEXP, SEXP seSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP showFlagSEXP, SEXP ziSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -21,14 +21,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int& >::type maxiter(maxiterSEXP);
     Rcpp::traits::input_parameter< double& >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< int >::type showFlag(showFlagSEXP);
-    Rcpp::traits::input_parameter< int >::type bnb(bnbSEXP);
-    rcpp_result_gen = Rcpp::wrap(em(param2, xvec, yvec, freq, n, se, maxiter, tol, showFlag, bnb));
+    Rcpp::traits::input_parameter< int >::type zi(ziSEXP);
+    rcpp_result_gen = Rcpp::wrap(em(param2, xvec, yvec, freq, n, se, maxiter, tol, showFlag, zi));
     return rcpp_result_gen;
 END_RCPP
 }
 // emReg
-List emReg(NumericVector& param2, IntegerVector& xvec, IntegerVector& yvec, NumericMatrix& ZZ, NumericMatrix& WW, int& pZ, int& pW, int& n, int& se, int& maxiter, double& tol, int showFlag, int bnb);
-RcppExport SEXP _bzinb_emReg(SEXP param2SEXP, SEXP xvecSEXP, SEXP yvecSEXP, SEXP ZZSEXP, SEXP WWSEXP, SEXP pZSEXP, SEXP pWSEXP, SEXP nSEXP, SEXP seSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP showFlagSEXP, SEXP bnbSEXP) {
+List emReg(NumericVector& param2, IntegerVector& xvec, IntegerVector& yvec, NumericMatrix& ZZ, NumericMatrix& WW, int& pZ, int& pW, int& n, int& se, int& maxiter, double& tol, int showFlag, int zi);
+RcppExport SEXP _bzinb_emReg(SEXP param2SEXP, SEXP xvecSEXP, SEXP yvecSEXP, SEXP ZZSEXP, SEXP WWSEXP, SEXP pZSEXP, SEXP pWSEXP, SEXP nSEXP, SEXP seSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP showFlagSEXP, SEXP ziSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -44,14 +44,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int& >::type maxiter(maxiterSEXP);
     Rcpp::traits::input_parameter< double& >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< int >::type showFlag(showFlagSEXP);
-    Rcpp::traits::input_parameter< int >::type bnb(bnbSEXP);
-    rcpp_result_gen = Rcpp::wrap(emReg(param2, xvec, yvec, ZZ, WW, pZ, pW, n, se, maxiter, tol, showFlag, bnb));
+    Rcpp::traits::input_parameter< int >::type zi(ziSEXP);
+    rcpp_result_gen = Rcpp::wrap(emReg(param2, xvec, yvec, ZZ, WW, pZ, pW, n, se, maxiter, tol, showFlag, zi));
     return rcpp_result_gen;
 END_RCPP
 }
 // dBvZINB_Expt
-void dBvZINB_Expt(int& x, int& y, int& freq, double& a0, double& a1, double& a2, double& b1, double& b2, double& p1, double& p2, double& p3, double& p4, NumericVector& expt, NumericVector& s_i, NumericVector& info, int se, int bnb, int infoReg);
-RcppExport SEXP _bzinb_dBvZINB_Expt(SEXP xSEXP, SEXP ySEXP, SEXP freqSEXP, SEXP a0SEXP, SEXP a1SEXP, SEXP a2SEXP, SEXP b1SEXP, SEXP b2SEXP, SEXP p1SEXP, SEXP p2SEXP, SEXP p3SEXP, SEXP p4SEXP, SEXP exptSEXP, SEXP s_iSEXP, SEXP infoSEXP, SEXP seSEXP, SEXP bnbSEXP, SEXP infoRegSEXP) {
+void dBvZINB_Expt(int& x, int& y, int& freq, double& a0, double& a1, double& a2, double& b1, double& b2, double& p1, double& p2, double& p3, double& p4, NumericVector& expt, NumericVector& s_i, NumericVector& info, int se, int zi, int infoReg);
+RcppExport SEXP _bzinb_dBvZINB_Expt(SEXP xSEXP, SEXP ySEXP, SEXP freqSEXP, SEXP a0SEXP, SEXP a1SEXP, SEXP a2SEXP, SEXP b1SEXP, SEXP b2SEXP, SEXP p1SEXP, SEXP p2SEXP, SEXP p3SEXP, SEXP p4SEXP, SEXP exptSEXP, SEXP s_iSEXP, SEXP infoSEXP, SEXP seSEXP, SEXP ziSEXP, SEXP infoRegSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int& >::type x(xSEXP);
@@ -70,15 +70,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector& >::type s_i(s_iSEXP);
     Rcpp::traits::input_parameter< NumericVector& >::type info(infoSEXP);
     Rcpp::traits::input_parameter< int >::type se(seSEXP);
-    Rcpp::traits::input_parameter< int >::type bnb(bnbSEXP);
+    Rcpp::traits::input_parameter< int >::type zi(ziSEXP);
     Rcpp::traits::input_parameter< int >::type infoReg(infoRegSEXP);
-    dBvZINB_Expt(x, y, freq, a0, a1, a2, b1, b2, p1, p2, p3, p4, expt, s_i, info, se, bnb, infoReg);
+    dBvZINB_Expt(x, y, freq, a0, a1, a2, b1, b2, p1, p2, p3, p4, expt, s_i, info, se, zi, infoReg);
     return R_NilValue;
 END_RCPP
 }
 // dBvZINB_Expt_vec
-void dBvZINB_Expt_vec(IntegerVector& xvec, IntegerVector& yvec, IntegerVector& freq, int& n, double& a0, double& a1, double& a2, double& b1, double& b2, double& p1, double& p2, double& p3, double& p4, NumericVector& expt, NumericVector& s_i, NumericVector& info, int se, int bnb);
-RcppExport SEXP _bzinb_dBvZINB_Expt_vec(SEXP xvecSEXP, SEXP yvecSEXP, SEXP freqSEXP, SEXP nSEXP, SEXP a0SEXP, SEXP a1SEXP, SEXP a2SEXP, SEXP b1SEXP, SEXP b2SEXP, SEXP p1SEXP, SEXP p2SEXP, SEXP p3SEXP, SEXP p4SEXP, SEXP exptSEXP, SEXP s_iSEXP, SEXP infoSEXP, SEXP seSEXP, SEXP bnbSEXP) {
+void dBvZINB_Expt_vec(IntegerVector& xvec, IntegerVector& yvec, IntegerVector& freq, int& n, double& a0, double& a1, double& a2, double& b1, double& b2, double& p1, double& p2, double& p3, double& p4, NumericVector& expt, NumericVector& s_i, NumericVector& info, int se, int zi);
+RcppExport SEXP _bzinb_dBvZINB_Expt_vec(SEXP xvecSEXP, SEXP yvecSEXP, SEXP freqSEXP, SEXP nSEXP, SEXP a0SEXP, SEXP a1SEXP, SEXP a2SEXP, SEXP b1SEXP, SEXP b2SEXP, SEXP p1SEXP, SEXP p2SEXP, SEXP p3SEXP, SEXP p4SEXP, SEXP exptSEXP, SEXP s_iSEXP, SEXP infoSEXP, SEXP seSEXP, SEXP ziSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< IntegerVector& >::type xvec(xvecSEXP);
@@ -98,8 +98,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector& >::type s_i(s_iSEXP);
     Rcpp::traits::input_parameter< NumericVector& >::type info(infoSEXP);
     Rcpp::traits::input_parameter< int >::type se(seSEXP);
-    Rcpp::traits::input_parameter< int >::type bnb(bnbSEXP);
-    dBvZINB_Expt_vec(xvec, yvec, freq, n, a0, a1, a2, b1, b2, p1, p2, p3, p4, expt, s_i, info, se, bnb);
+    Rcpp::traits::input_parameter< int >::type zi(ziSEXP);
+    dBvZINB_Expt_vec(xvec, yvec, freq, n, a0, a1, a2, b1, b2, p1, p2, p3, p4, expt, s_i, info, se, zi);
     return R_NilValue;
 END_RCPP
 }
@@ -119,8 +119,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // dBvZINB_Expt_mat
-void dBvZINB_Expt_mat(IntegerVector& xvec, IntegerVector& yvec, NumericMatrix& ZZ, NumericMatrix& WW, int& n, int& pZ, int& pW, NumericVector& alpha, NumericVector& b1, NumericVector& b2, NumericVector& p1, NumericVector& p2, NumericVector& p3, NumericVector& p4, NumericMatrix& expt, NumericVector& s_i, NumericVector& s_i_abp, NumericVector& info, int se, int bnb, NumericVector& expt_i);
-RcppExport SEXP _bzinb_dBvZINB_Expt_mat(SEXP xvecSEXP, SEXP yvecSEXP, SEXP ZZSEXP, SEXP WWSEXP, SEXP nSEXP, SEXP pZSEXP, SEXP pWSEXP, SEXP alphaSEXP, SEXP b1SEXP, SEXP b2SEXP, SEXP p1SEXP, SEXP p2SEXP, SEXP p3SEXP, SEXP p4SEXP, SEXP exptSEXP, SEXP s_iSEXP, SEXP s_i_abpSEXP, SEXP infoSEXP, SEXP seSEXP, SEXP bnbSEXP, SEXP expt_iSEXP) {
+void dBvZINB_Expt_mat(IntegerVector& xvec, IntegerVector& yvec, NumericMatrix& ZZ, NumericMatrix& WW, int& n, int& pZ, int& pW, NumericVector& alpha, NumericVector& b1, NumericVector& b2, NumericVector& p1, NumericVector& p2, NumericVector& p3, NumericVector& p4, NumericMatrix& expt, NumericVector& s_i, NumericVector& s_i_abp, NumericVector& info, int se, int zi, NumericVector& expt_i);
+RcppExport SEXP _bzinb_dBvZINB_Expt_mat(SEXP xvecSEXP, SEXP yvecSEXP, SEXP ZZSEXP, SEXP WWSEXP, SEXP nSEXP, SEXP pZSEXP, SEXP pWSEXP, SEXP alphaSEXP, SEXP b1SEXP, SEXP b2SEXP, SEXP p1SEXP, SEXP p2SEXP, SEXP p3SEXP, SEXP p4SEXP, SEXP exptSEXP, SEXP s_iSEXP, SEXP s_i_abpSEXP, SEXP infoSEXP, SEXP seSEXP, SEXP ziSEXP, SEXP expt_iSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< IntegerVector& >::type xvec(xvecSEXP);
@@ -142,9 +142,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector& >::type s_i_abp(s_i_abpSEXP);
     Rcpp::traits::input_parameter< NumericVector& >::type info(infoSEXP);
     Rcpp::traits::input_parameter< int >::type se(seSEXP);
-    Rcpp::traits::input_parameter< int >::type bnb(bnbSEXP);
+    Rcpp::traits::input_parameter< int >::type zi(ziSEXP);
     Rcpp::traits::input_parameter< NumericVector& >::type expt_i(expt_iSEXP);
-    dBvZINB_Expt_mat(xvec, yvec, ZZ, WW, n, pZ, pW, alpha, b1, b2, p1, p2, p3, p4, expt, s_i, s_i_abp, info, se, bnb, expt_i);
+    dBvZINB_Expt_mat(xvec, yvec, ZZ, WW, n, pZ, pW, alpha, b1, b2, p1, p2, p3, p4, expt, s_i, s_i_abp, info, se, zi, expt_i);
     return R_NilValue;
 END_RCPP
 }

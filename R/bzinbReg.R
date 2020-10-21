@@ -63,12 +63,20 @@ expt.names <- c("lik", "ER0", "ER1", "ER2", "ElogR0", "ElogR1", "ElogR2", "EE1",
 bzinb.base.reg <- 
   function (y1, y2, Z, W, 
             tol = 1e-8, maxiter = 50000, showFlag = FALSE, 
-            vcov = FALSE, bnb = 0, initial = NULL) {
+            vcov = FALSE, zero.inflation = 3, initial = NULL) {
   se = TRUE  # se is estimated by default
   n <- length(y1)
   pZ <- dim(Z)[2]
   pW <- dim(W)[2]
-  dim.param <- 3 + 2 * pZ + 3 * pW
+  
+  dim_pi = zero.inflation
+  if (zero.inflation == 2) dim_pi = 1  # 3 = 3, 1,2 = 1, 0 = 0
+  dim.param <- 3 + 2 * pZ + dim_pi * pW
+  
+  if (zero.inflation== 0) zz = c(0, 0, 0)
+  else if (zero.inflation== 1) zz = c(0, 1, 0)
+  else if (zero.inflation== 2) zz = c(0, 0, 1)
+  else if (zero.inflation== 3) zz = c(1, 1, 1)
   
   if (max(y2)==0) {
     stop("TBD!!!!!!!!!!")
@@ -76,15 +84,12 @@ bzinb.base.reg <-
   } # 9 params, lik, iter, pureCor, and 11 se's
   
   # info <- if (se) {matrix(0, ncol = 8, nrow = 8, dimnames = list(abp.names[-9], abp.names[-9]))} else {0}
-  ae.names  <- c("a0", "a1", "a2", 
-                 paste0("eta1_", colnames(Z)),
-                 paste0("eta2_", colnames(Z)))
   aeg.names <- c("a0", "a1", "a2", 
                  paste0("eta1_", colnames(Z)),
                  paste0("eta2_", colnames(Z)),
-                 paste0("gamma1_", colnames(W)),
-                 paste0("gamma2_", colnames(W)),
-                 paste0("gamma3_", colnames(W)))
+                 if (zz[1]) paste0("gamma1_", colnames(W)),
+                 if (zz[2]) paste0("gamma2_", colnames(W)),
+                 if (zz[3]) paste0("gamma3_", colnames(W)))
   # initial guess
   if (is.null(initial)) {
     y1bar <- mean(y1); y2bar <- mean(y2); xybar <- mean(c(y1bar, y2bar))
@@ -93,6 +98,7 @@ bzinb.base.reg <-
     zero <- sum(y1 == 0 & y2 == 0) / n
 
     initial <- rep(0.1, dim.param)
+# should put zeros for gamma1~3 when zero.inflation == 1 or 2.!!!!!!!!
     names(initial) <- aeg.names
     # initial[4] <- s2.x /ifelse(y1bar==0,1e-4, y1bar)
     # initial[5] <- s2.y /ifelse(y2bar==0,1e-4, y2bar)
@@ -130,14 +136,14 @@ bzinb.base.reg <-
                   pZ = pZ, pW = pW,
                   n = n, se = as.integer(se), 
                   maxiter = as.integer(maxiter), tol = as.double(tol), 
-                  showFlag = as.integer(showFlag), bnb = bnb)
-  
+                  showFlag = as.integer(showFlag), zi = zero.inflation)
+tmp.em.out1 <<- em.out  
   em.out[[3]] <- matrix(em.out[[3]], dim.param, dim.param)
   names(em.out) <- c("param2",              # "y1", "y2", "freq", "n",
                      "expt", "info",        # "se",
                      "iter",                # "maxiter", "tol", "showFlag",
                      "nonconv", "trajectory") # , "bnb")
-
+tmp.em.out <<- em.out
   # overwriting the original object
   param = setNames(em.out$param2, aeg.names)
   expt  = setNames(em.out$expt, expt.names)
@@ -159,10 +165,10 @@ bzinb.base.reg <-
   # if (bnb) {info = info[1:5, 1:5]}
   # 
   if (se) {
-    par.names <- if (bnb) ae.names else aeg.names
+    par.names <- aeg.names
     dim.par <- length(par.names)
 
-    qr.info <- try(qr(info))
+    qr.info <- try(qr(info), silent = TRUE)
     if (class(qr.info)[1] == "try-error") {
       warning ("The information matrix has NA/NaN/Inf and thus the standard error is not properly estimatd.")
       std.param = setNames(rep(NA, dim.par), par.names)
@@ -205,6 +211,7 @@ bzinb.base.reg <-
 bzinb.reg <- function(mu.formula,       # mu.formula = cbind(Sepal.Length, Sepal.Width) ~ Species + Petal.Length
                       nu.formula = ~ 1, # nu.formula = ~ Species + Petal.Width
                       data,
+                      zero.inflation = c("both", "first", "second", "none"),
                       tol = 1e-8, maxiter = 50000, showFlag = FALSE,
                       vcov = FALSE, initial = NULL) {
   
@@ -221,11 +228,14 @@ bzinb.reg <- function(mu.formula,       # mu.formula = cbind(Sepal.Length, Sepal
   if (dim(y)[2] != 2) stop("The dimension of the outcome variable (in mu.formula) must be two.")
   if (any(y < 0)) stop("Negative outcome values are not allowed.")
   y[] <- as.integer(round(y, 0))  # y values in integers. 
+  zero.inflation = match.arg(zero.inflation)
+  zero.inflation = switch(zero.inflation, "both" = 3, "first" = 1, "second" = 2, "none" = 0)
 
   ### from here!!!
   result <- try(bzinb.base.reg(y1 = y[, 1], y2 = y[, 2], 
                                Z = Z, W = W, tol = tol, maxiter = maxiter, 
-                               showFlag = showFlag, vcov = vcov, initial = initial))
+                               showFlag = showFlag, vcov = vcov, initial = initial,
+                               zero.inflation = zero.inflation))
   if (class(result)[1] == "try-error") {
     result <- list(coefficients = matrix(rep(NA, 18),
                                          ncol = 2, dimnames = list(abp.names, c("Estimate", "Std.err"))),
