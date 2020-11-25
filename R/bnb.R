@@ -200,7 +200,7 @@ bnb <- function (xvec, yvec, em = TRUE, tol = 1e-8, maxiter = 50000, vcov = TRUE
   if (em) {
     initial = c(initial, 1, 0, 0, 0)
     result <- try(bzinb.base(xvec, yvec, initial = initial, tol = tol, maxiter = maxiter, 
-                             showFlag = showFlag, vcov = vcov, bnb = 1))
+                             showFlag = showFlag, vcov = vcov, zi = 0))
     if (class(result)[1] == "try-error") {
       result <- list(coefficients = matrix(rep(NA, 10),
                                            ncol = 2, dimnames = list(abp.names[1:5], c("Estimate", "Std.err"))), 

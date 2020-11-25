@@ -320,7 +320,7 @@ List emReg(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
     }
     
 int counter = 0L;
-    error = 1.0;
+    error = zi[3] > 0 ? 1.0: 0.0;
     while ((error >= EPSILON3)) {
 counter++;
 // if (counter > 10000) break;
@@ -339,6 +339,7 @@ if (counter >= 9990)
       Rcout << endl;
     }
   }
+    
       // update epsilon
       updateGamma(WW, expt, p2, p3, p4, gamma1, gamma2, gamma3, 
                   gammaNew, V_gam, score_gam, n, pW, error, zi);

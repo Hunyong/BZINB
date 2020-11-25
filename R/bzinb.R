@@ -277,7 +277,13 @@ abp.names <- c("a0", "a1", "a2", "b1", "b2", "p1", "p2", "p3", "p4") # global va
 expt.names <- c("lik", "ER0", "ER1", "ER2", "ElogR0", "ElogR1", "ElogR2", "EE1", "EE2", "EE3", "EE4", "EV")
 
 bzinb.base <- function (xvec, yvec, initial = NULL, tol = 1e-8, maxiter=50000, showFlag=FALSE, vcov = FALSE,
-                        zi = 3) {
+                        zi = 4) {
+  # zi == 0 # BNB:     (1,   0,   0,   0)
+  # zi == 1 # NB-ZINB  (res, 0,   pi3, 0)
+  # zi == 2 # ZINB-NB  (res, pi2, 0,   0)
+  # zi == 3 # co-ZI    (res, 0,   0, pi4)
+  # zi == 4 # full BZINB (res, pi2, pi3, pi4)
+  
   se = TRUE  # se is estimated by default
   xy.reduced <- as.data.frame(table(xvec,yvec))
   names(xy.reduced) <- c("x", "y","freq")
