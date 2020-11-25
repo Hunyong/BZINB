@@ -3,7 +3,7 @@
 #' and gamma coincide up to the smaller dimension.
 #' 
 #' install.packages("MASS")
-#' @example 
+#' @examples
 #' rBzinbData()
 rBzinbData <- function(n = 200, alpha = c(1, 1, 1), 
                        eta1 = c(-3, 0.5, 0.5, 0.5, 0.5), eta2 = c(-2, 0, 1, 0, 1),

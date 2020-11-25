@@ -17,7 +17,8 @@ using namespace Rcpp;
 // #define DEBUG4
 // #define DEBUG5
 // #define DEBUG7
-#define DEBUG8
+//#define DEBUG8
+#define DEBUG8g
 
 // 3. EM
 // [[Rcpp::export]]
@@ -25,32 +26,20 @@ List emReg(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
            NumericMatrix& ZZ, NumericMatrix& WW,
            int &pZ, int &pW,
            int &n, int &se, int &maxiter, double &tol, int showFlag,
-           int zi)
+           IntegerVector &zi)
 {
+  // zi = (indicators for gamma1, gamma2, gamma3, zi.index (in 0:4), dim_pi)
   NumericVector param = clone(param2);
-  int dim_pi = zi;
-  if (zi==2) dim_pi = 1;   // 3 = 3, 1,2 = 1, 0 = 0
+  int dim_pi = zi[4]; // dim_pi = 0 (for zi = 0), 1 (for zi = 1,2,3), 3 (for zi = 4)
   int dim_param = 3 + 2 * pZ + dim_pi * pW;
-  IntegerVector zz(4, 1);     // zz[0] zz[1] zz[2] correspond to pi1 pi2 pi3 being nonzero.
-  zz[3] = zi;                 // zz[3] = zi indicator. 
-                              // 1 by default, when zi = 3 (both variables are zero inflated.)
-  if (zi == 1) { // if only the first variable is zero inflated, then pi2 and pi4 are non zero.
-    zz[0] = zz[2] = 0;
-  }
-  if (zi == 2) { // if only the second variable is zero inflated, then pi3 and pi4 are non zero.
-    zz[0] = zz[1] = 0;
-  }
-  if (zi == 0) {
-    zz[0] = zz[1] = zz[2] = 0;
-  }
-  int dim_gam = dim_pi > 0 ? pW * dim_pi: 1;
+  int dim_gam = dim_pi > 0 ? (pW * dim_pi): 1;
   
   NumericVector alpha(3);
   NumericVector eta1(pZ);
   NumericVector eta2(pZ);
-  NumericVector gamma1(zz[0]? pW: 1, 0.0);
-  NumericVector gamma2(zz[1]? pW: 1, 0.0);
-  NumericVector gamma3(zz[2]? pW: 1, 0.0);
+  NumericVector gamma1(zi[0]? pW: 1, 0.0);
+  NumericVector gamma2(zi[1]? pW: 1, 0.0);
+  NumericVector gamma3(zi[2]? pW: 1, 0.0);
   double error;
 
   double param_diff = 1.0;
@@ -61,10 +50,10 @@ List emReg(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
   NumericVector exptBar(12);
   NumericVector b1(n);
   NumericVector b2(n);
-  NumericVector p1(n, 0.0);
+  NumericVector p1(n, 1.0);
   NumericVector p2(n, 0.0);
   NumericVector p3(n, 0.0);
-  NumericVector p4(n, 1.0);
+  NumericVector p4(n, 0.0);
   NumericVector b21(n); // b2 / b1
   NumericVector Zbar(pZ);
   NumericVector epsilon(pZ);
@@ -112,15 +101,15 @@ List emReg(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
   offset += pZ;
   for (int i = 0; i < pZ; i++) eta2[i] = (double) param[offset + i];
   offset += pZ;
-  if (zz[0]) {
+  if (zi[0]) {
     for (int i = 0; i < pW; i++) gamma1[i] = (double) param[offset + i];
     offset += pW;
   }
-  if (zz[1]) {
+  if (zi[1]) {
     for (int i = 0; i < pW; i++) gamma2[i] = (double) param[offset + i];
     offset += pW;
   } 
-  if (zz[2]) {
+  if (zi[2]) {
     for (int i = 0; i < pW; i++) gamma3[i] = (double) param[offset + i];
   }
   
@@ -143,24 +132,29 @@ List emReg(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
     for (int i = 0;i < dim_param;i++)
     {
       param_old[i] = param[i];
-      // cout << "param [" << i << "] = " << param[i] << " ";
+// cout << "param [" << i << "] = " << param[i] << " ";
     }
+
 
     if (iter[0] <= 1L) {
       // reparametrization
       logLin(ZZ, eta1, n, pZ, 1, b1);
       logLin(ZZ, eta2, n, pZ, 1, b2);
       for (int i = 0; i < n; i++) b21[i] = b2[i] / b1[i];
-// from here!!!!!
-      if (zz[0]) logLin(WW, gamma1, n, pW, 1, p1);
-      if (zz[1]) logLin(WW, gamma2, n, pW, 1, p2);
-      if (zz[2]) logLin(WW, gamma3, n, pW, 1, p3);
+
+      if (zi[0]) logLin(WW, gamma1, n, pW, 1, p2);
+      if (zi[1]) logLin(WW, gamma2, n, pW, 1, p3);
+      if (zi[2]) logLin(WW, gamma3, n, pW, 1, p4);
       for (int i= 0; i < n; i++) { // normalization and p4
-        p4[i] = p1[i] + p2[i] + p3[i] + 1.0;
-        p1[i] = p1[i] / p4[i];
-        p2[i] = p2[i] / p4[i];
-        p3[i] = p3[i] / p4[i];
-        p4[i] = 1.0 / p4[i];
+        p1[i] = 1.0;
+        if (zi[0]) p1[i] += p2[i];
+        if (zi[1]) p1[i] += p3[i];
+        if (zi[2]) p1[i] += p4[i];
+        
+        if (zi[0]) p2[i] /= p1[i];
+        if (zi[1]) p3[i] /= p1[i];
+        if (zi[2]) p4[i] /= p1[i];
+        p1[i] = 1.0 / p1[i];
       }
     }
     
@@ -181,16 +175,19 @@ List emReg(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
 
     dBvZINB_Expt_mat(xvec, yvec, ZZ, WW, n, pZ, pW,
                      alpha, b1, b2, p1, p2, p3, p4, 
-                     expt, s_i, s_i_abp, info, 0, zi, expt_i);
+                     expt, s_i, s_i_abp, info, 0, zi[3], expt_i);
 
-Rcout << "expt_mat = " << endl;
-for (int i = 0; i < n; i++) {
-  for (int j = 0; j < 12; j++) {
-    Rcout << expt(j, i) << " ";
-  }
-  Rcout << endl;
-}
-Rcout << endl; 
+// Rcout << "expt_mat = " << endl;
+// for (int i = 0; i < n; i++) {
+//   if (xvec[i]==0 & yvec[i] > 0) {
+//     Rcout << i << ": ";
+//     for (int j = 0; j < 12; j++) {
+//       Rcout << expt(j, i) << " ";
+//     }
+//     Rcout << endl;
+//   }
+// }
+// Rcout << endl;
     
     // exptBar.
     for (int i = 0; i < 12; i++) {
@@ -226,21 +223,21 @@ Rcout << endl;
       for (int i = 0; i < pZ; i ++ ) 
         Rcout << param[3 + pZ + i] << " ";
       offset = 3 + 2 * pZ;
-      if (zz[0]) {
+      if (zi[0]) {
         Rcout << "), gamma1 = (";
         for (int i = 0; i < pW; i ++ ) 
           Rcout << param[offset + i] << " ";
         offset += pW;
       }
-      if (zz[1]) {
+      if (zi[1]) {
         Rcout << "), gamma2 = (";
         for (int i = 0; i < pW; i ++ ) 
           Rcout << param[offset + i] << " ";
         offset += pW;
       }
-      if (zz[2]) {
+      if (zi[2]) {
         Rcout << "), gamma3 = (";
-        if (zz[2]) for (int i = 0; i < pW; i ++ ) 
+        if (zi[2]) for (int i = 0; i < pW; i ++ ) 
           Rcout << param[offset + i] << " ";
       }
       Rcout << ")" << endl;
@@ -322,49 +319,71 @@ Rcout << endl;
       b2[i] = b21[i] * b1[i];
     }
     
-// int counter = 0L;
+int counter = 0L;
     error = 1.0;
     while ((error >= EPSILON3)) {
-// counter++;
-// if (counter > 500) break;
-// if (counter >= 490) {
-//   Rcout << "score_gam = " << endl;
-//   for (int j =0; j < 3*pW; j++) {
-//     Rcout << score_gam[j] << " ";
-//   }  
-//   Rcout << endl;
-//   Rcout << "V_gam = " << endl;
-//   for (int i =0; i < 3*pW; i++) {
-//     for (int j =0; j < 3*pW; j++) {
-//       Rcout << V_gam[i + j * 3*pW] << " ";
-//     }  
-//     Rcout << endl;
-//   }
-// }
+counter++;
+// if (counter > 10000) break;
+if (counter >= 9990)
+  {
+    Rcout << "score_gam = " << endl;
+    for (int j =0; j < dim_gam; j++) {
+      Rcout << score_gam[j] << " ";
+    }
+    Rcout << endl;
+    Rcout << "V_gam = " << endl;
+    for (int i =0; i < dim_gam; i++) {
+      for (int j =0; j < dim_gam; j++) {
+        Rcout << V_gam[i + j * dim_gam] << " ";
+      }
+      Rcout << endl;
+    }
+  }
       // update epsilon
-      updateGamma(WW, expt, p1, p2, p3, gamma1, gamma2, gamma3, 
-                  gammaNew, V_gam, score_gam, n, pW, error, zz);
-#ifdef DEBUG8
-  Rcout << "gamma error = "<< error <<" ";
-  for (int i =0; i < pW; i++) Rcout << "("<< gamma1[i] << ") "; // ", "<< gamma2[i] << ", "<< gamma3[i] << ") ";
-  Rcout << "/ scr = ";
-  if (zz[3] > 0) {
+      updateGamma(WW, expt, p2, p3, p4, gamma1, gamma2, gamma3, 
+                  gammaNew, V_gam, score_gam, n, pW, error, zi);
+#ifdef DEBUG8g
+  Rcout << "gamma error = ("<< error;
+  if (zi[0]) Rcout << ") " << endl << "gamma1 = (";
+  if (zi[0]) for (int i =0; i < pW; i++) Rcout << gamma1[i] << ", ";
+  if (zi[1]) Rcout << ") " << endl << "gamma2 = ";
+  if (zi[1]) for (int i =0; i < pW; i++) Rcout << gamma2[i] << ", ";
+  if (zi[2]) Rcout << ") " << endl << "gamma3 = ";
+  if (zi[2]) for (int i =0; i < pW; i++) Rcout << gamma3[i] << ", ";
+  Rcout << ") " << endl << "score_gam = ";
+  if (zi[3] > 0) {
     for (int i = 0; i < dim_gam; i++) {
-      Rcout << score(i, 0) << " ";
+      Rcout << score_gam(i, 0) << " ";
     }
     Rcout << endl;
   }
+  // if (zi[3] > 0) {
+  //   Rcout << "  pi2 = ";
+  //   for (int i = 0; i < n; i++) {
+  //     if (i < 5) Rcout << p2[i] << " (i =" << i <<") " ;
+  //   }
+  //   Rcout << endl;
+  // }
+  // Rcout << "(gamma1) = ";
+  // for (int i= 0; i < pW; i++) {
+  //   Rcout << gamma1[i] << " ";
+  // }
+  // Rcout << endl;
 #endif
       // update pi correspondingly
-      if (zz[0]) logLin(WW, gamma1, n, pW, 1, p1);
-      if (zz[1]) logLin(WW, gamma2, n, pW, 1, p2);
-      if (zz[2]) logLin(WW, gamma3, n, pW, 1, p3);
+      if (zi[0]) logLin(WW, gamma1, n, pW, 1, p2);
+      if (zi[1]) logLin(WW, gamma2, n, pW, 1, p3);
+      if (zi[2]) logLin(WW, gamma3, n, pW, 1, p4);
       for (int i= 0; i < n; i++) { // normalization and p4
-        p4[i] = p1[i] + p2[i] + p3[i] + 1.0;
-        p1[i] = p1[i] / p4[i];
-        p2[i] = p2[i] / p4[i];
-        p3[i] = p3[i] / p4[i];
-        p4[i] = 1.0 / p4[i];
+        p1[i] = 1.0;
+        if (zi[0]) p1[i] += p2[i];
+        if (zi[1]) p1[i] += p3[i];
+        if (zi[2]) p1[i] += p4[i];
+        
+        if (zi[0]) p2[i] /= p1[i];
+        if (zi[1]) p3[i] /= p1[i];
+        if (zi[2]) p4[i] /= p1[i];
+        p1[i] = 1.0 / p1[i];
       }
     }
   
@@ -376,15 +395,15 @@ Rcout << endl;
     offset += pZ;
     for (int i = 0; i < pZ; i++) param[offset + i] = eta2[i]  ;
     offset += pZ;
-    if (zz[0]) {
+    if (zi[0]) {
       for (int i = 0; i < pW; i++) param[offset + i] = gamma1[i];
       offset += pW;
     }
-    if (zz[1]) {
+    if (zi[1]) {
       for (int i = 0; i < pW; i++) param[offset + i] = gamma2[i];
       offset += pW;
     }
-    if (zz[2])
+    if (zi[2])
       for (int i = 0; i < pW; i++) param[offset + i] = gamma3[i];
     
     
@@ -433,7 +452,7 @@ Rcout << endl;
   if (se == 1) { //updating expt and calculate SE when called for.
     dBvZINB_Expt_mat(xvec, yvec, ZZ, WW, n, pZ, pW,
                      alpha, b1, b2, p1, p2, p3, p4, 
-                     expt, s_i, s_i_abp, info, se, zi, expt_i);
+                     expt, s_i, s_i_abp, info, se, zi[3], expt_i);
   }
 
   // cout << "a " << param[0] << " " << param[1] << " " << param[2] << " b " << param[3] << " " << param[4] << " pi "

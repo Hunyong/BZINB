@@ -27,7 +27,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // emReg
-List emReg(NumericVector& param2, IntegerVector& xvec, IntegerVector& yvec, NumericMatrix& ZZ, NumericMatrix& WW, int& pZ, int& pW, int& n, int& se, int& maxiter, double& tol, int showFlag, int zi);
+List emReg(NumericVector& param2, IntegerVector& xvec, IntegerVector& yvec, NumericMatrix& ZZ, NumericMatrix& WW, int& pZ, int& pW, int& n, int& se, int& maxiter, double& tol, int showFlag, IntegerVector& zi);
 RcppExport SEXP _bzinb_emReg(SEXP param2SEXP, SEXP xvecSEXP, SEXP yvecSEXP, SEXP ZZSEXP, SEXP WWSEXP, SEXP pZSEXP, SEXP pWSEXP, SEXP nSEXP, SEXP seSEXP, SEXP maxiterSEXP, SEXP tolSEXP, SEXP showFlagSEXP, SEXP ziSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -44,7 +44,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int& >::type maxiter(maxiterSEXP);
     Rcpp::traits::input_parameter< double& >::type tol(tolSEXP);
     Rcpp::traits::input_parameter< int >::type showFlag(showFlagSEXP);
-    Rcpp::traits::input_parameter< int >::type zi(ziSEXP);
+    Rcpp::traits::input_parameter< IntegerVector& >::type zi(ziSEXP);
     rcpp_result_gen = Rcpp::wrap(emReg(param2, xvec, yvec, ZZ, WW, pZ, pW, n, se, maxiter, tol, showFlag, zi));
     return rcpp_result_gen;
 END_RCPP

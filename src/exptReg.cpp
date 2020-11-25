@@ -65,8 +65,8 @@ void dBvZINB_Expt_mat(IntegerVector &xvec, IntegerVector &yvec,
     expt_i = expt( _, i);
     // sumFreq += freq[i];
 
-Rcout << "abp " << a0 << " " << a1<< " " <<  a2 << " " << 
-               b1i<< " " <<  b2i<< " " <<  p1i<< " " << p2i<< " " <<  p3i<< " " << p4i <<endl;
+// Rcout << "abp " << a0 << " " << a1<< " " <<  a2 << " " << 
+//                b1i<< " " <<  b2i<< " " <<  p1i<< " " << p2i<< " " <<  p3i<< " " << p4i <<endl;
 // Rcout << "[exptReg.cpp] expt.mat before " << endl;
 // for (int j=0; j<12; j++) {
 //   Rcout << "j = " << j << ", expt = " << expt[j + i * 12] << " " << endl;
@@ -100,35 +100,41 @@ Rcout << "abp " << a0 << " " << a1<< " " <<  a2 << " " <<
       int offset3 = offset2 + pW;
       int offset4;
       
-      if (zi == 3) {
+      if (zi == 4) {
         for (int j = 0; j < pW; j++) {
-            s_i[j + offset]   = s_i_abp[5] * p1i * (1-p1i) * WW[i + n * j];
-            s_i[j + offset]  += s_i_abp[6] * p1i * ( -p2i) * WW[i + n * j];
-            s_i[j + offset]  += s_i_abp[7] * p1i * ( -p3i) * WW[i + n * j];
-            s_i[j + offset2]  = s_i_abp[5] * p2i * ( -p1i) * WW[i + n * j];
-            s_i[j + offset2] += s_i_abp[6] * p2i * (1-p2i) * WW[i + n * j];
-            s_i[j + offset2] += s_i_abp[7] * p2i * ( -p3i) * WW[i + n * j];
-            s_i[j + offset3]  = s_i_abp[5] * p3i * ( -p1i) * WW[i + n * j];
-            s_i[j + offset3] += s_i_abp[6] * p3i * ( -p2i) * WW[i + n * j];
-            s_i[j + offset3] += s_i_abp[7] * p3i * (1-p3i) * WW[i + n * j];
-Rcout << "si[" << j << " + offset123] = " << s_i[j + offset] << " " << s_i[j + offset2] << " " << s_i[j + offset3] << " " << endl;
+            s_i[j + offset]   = s_i_abp[5] * p2i * (1-p2i) * WW[i + n * j];
+            s_i[j + offset]  += s_i_abp[6] * p2i * ( -p3i) * WW[i + n * j];
+            s_i[j + offset]  += s_i_abp[7] * p2i * ( -p4i) * WW[i + n * j];
+            s_i[j + offset2]  = s_i_abp[5] * p3i * ( -p2i) * WW[i + n * j];
+            s_i[j + offset2] += s_i_abp[6] * p3i * (1-p3i) * WW[i + n * j];
+            s_i[j + offset2] += s_i_abp[7] * p3i * ( -p4i) * WW[i + n * j];
+            s_i[j + offset3]  = s_i_abp[5] * p4i * ( -p2i) * WW[i + n * j];
+            s_i[j + offset3] += s_i_abp[6] * p4i * ( -p3i) * WW[i + n * j];
+            s_i[j + offset3] += s_i_abp[7] * p4i * (1-p4i) * WW[i + n * j];
+// Rcout << "si[" << j << " + offset123] = " << s_i[j + offset] << " " << s_i[j + offset2] << " " << s_i[j + offset3] << " " << endl;
         }
         offset4 = offset3 + pW;
       } else if (zi == 1) {
-Rcout << "s[" << i << "]_abp = ";
-        for (int j = 0; j < 8; j++) {
-          Rcout << s_i_abp[j] << " ";
-        }
-Rcout << endl;        
+// Rcout << "s[" << i << "]_abp = ";
+//         for (int j = 0; j < 8; j++) {
+//           Rcout << s_i_abp[j] << " ";
+//         }
+// Rcout << endl;        
         for (int j = 0; j < pW; j++) {
-          s_i[j + offset] += s_i_abp[6] * p2i * (1-p2i) * WW[i + n * j];
-Rcout << "s[" << i << "][" << j << " + offset] = " << s_i[j + offset] << " " << endl;
+          s_i[j + offset] += s_i_abp[6] * p3i * (1-p3i) * WW[i + n * j];
+// Rcout << "s[" << i << "][" << j << " + offset] = " << s_i[j + offset] << " " << endl;
         }
         offset4 = offset + pW;
       } else if (zi == 2) {
         for (int j = 0; j < pW; j++) {
-          s_i[j + offset] += s_i_abp[7] * p3i * (1-p3i) * WW[i + n * j];
-Rcout << "si[" << j << " + offset] = " << s_i[j + offset] << " " << endl;
+          s_i[j + offset] += s_i_abp[5] * p2i * (1-p2i) * WW[i + n * j];
+// Rcout << "si[" << j << " + offset] = " << s_i[j + offset] << " " << endl;
+        }
+        offset4 = offset + pW;
+      } else if (zi == 3) {
+        for (int j = 0; j < pW; j++) {
+          s_i[j + offset] += s_i_abp[7] * p4i * (1-p4i) * WW[i + n * j];
+          // Rcout << "si[" << j << " + offset] = " << s_i[j + offset] << " " << endl;
         }
         offset4 = offset + pW;
       } else {

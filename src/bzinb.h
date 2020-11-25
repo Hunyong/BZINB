@@ -94,6 +94,6 @@ Rcpp::List emReg(Rcpp::NumericVector& param2, Rcpp::IntegerVector &xvec, Rcpp::I
                  Rcpp::NumericMatrix& ZZ, Rcpp::NumericMatrix& WW,
                  int &pZ, int &pW,
                  int &n, int &se, int &maxiter, double &tol, int showFlag,
-                 int zi);
+                 Rcpp::IntegerVector &zi);
 
 #endif

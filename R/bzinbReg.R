@@ -2,9 +2,30 @@
 ## 4. Bivariate Zero-Inflated Negative Binomial Regression (BZINB-Reg)
 ##########################################################################################
 
+#' @name bzinbReg
+#' @rdname  bzinbReg
+#' @aliases bzinbReg.default
+#' @aliases bzinbReg.formula
+#' @aliases print.bzinbReg
+#' @export
+#' @useDynLib bzinb
+#' @examples
+#' library(devtools)
+#' document()
+#' load_all()
+#' set.seed(1)
+#' dat <- rBzinbData()
+#' bzinbReg(cbind(y1, y2) ~ ., ~ X1, data = dat, maxiter = 10)
+#' print(bzinbReg(cbind(y1, y2) ~ ., ~ X1, data = dat, maxiter = 10))
+#' bzinbReg(cbind(y1, y2) ~ ., ~ X1, data = dat, zero.inflation = "co-ZI", maxiter = 10)
+#' bzinbReg(cbind(y1, y2) ~ ., ~ X1, data = dat, zero.inflation = "ZINB-NB", maxiter = 10)
+"bzinbReg" <-
+  function(x, ...)
+    UseMethod("bzinbReg")
+
+
 #' @rdname bzinbReg
 #' @name bzinbReg
-#' @aliases bzinbReg
 #' 
 #' @title The bivariate zero-inflated negative binomial regression.
 #' 
@@ -53,43 +74,19 @@
 #'  
 #' @import Rcpp
 #' @export
-#' @useDynLib bzinb
 #' 
 
-
-abp.names <- c("a0", "a1", "a2", "b1", "b2", "p1", "p2", "p3", "p4") # global variable
 expt.names <- c("lik", "ER0", "ER1", "ER2", "ElogR0", "ElogR1", "ElogR2", "EE1", "EE2", "EE3", "EE4", "EV")
 
 bzinb.base.reg <- 
   function (y1, y2, Z, W, 
             tol = 1e-8, maxiter = 50000, showFlag = FALSE, 
-            vcov = FALSE, zero.inflation = 3, initial = NULL) {
+            vcov = FALSE, zi, aeg.names, dim.param, pZ, pW, initial = NULL) {
   se = TRUE  # se is estimated by default
   n <- length(y1)
   pZ <- dim(Z)[2]
   pW <- dim(W)[2]
   
-  dim_pi = zero.inflation
-  if (zero.inflation == 2) dim_pi = 1  # 3 = 3, 1,2 = 1, 0 = 0
-  dim.param <- 3 + 2 * pZ + dim_pi * pW
-  
-  if (zero.inflation== 0) zz = c(0, 0, 0)
-  else if (zero.inflation== 1) zz = c(0, 1, 0)
-  else if (zero.inflation== 2) zz = c(0, 0, 1)
-  else if (zero.inflation== 3) zz = c(1, 1, 1)
-  
-  if (max(y2)==0) {
-    stop("TBD!!!!!!!!!!")
-    # return(c(rep(1e-10,5),1,0,0,0, 0, 1, 0, if (se) {rep(NA, 11)}))
-  } # 9 params, lik, iter, pureCor, and 11 se's
-  
-  # info <- if (se) {matrix(0, ncol = 8, nrow = 8, dimnames = list(abp.names[-9], abp.names[-9]))} else {0}
-  aeg.names <- c("a0", "a1", "a2", 
-                 paste0("eta1_", colnames(Z)),
-                 paste0("eta2_", colnames(Z)),
-                 if (zz[1]) paste0("gamma1_", colnames(W)),
-                 if (zz[2]) paste0("gamma2_", colnames(W)),
-                 if (zz[3]) paste0("gamma3_", colnames(W)))
   # initial guess
   if (is.null(initial)) {
     y1bar <- mean(y1); y2bar <- mean(y2); xybar <- mean(c(y1bar, y2bar))
@@ -97,7 +94,7 @@ bzinb.base.reg <-
     cor.y <- cor(y1,y2); if (is.na(cor.y)) {cor.y <- 0}
     zero <- sum(y1 == 0 & y2 == 0) / n
 
-    initial <- rep(0.1, dim.param)
+    initial <- c(rep(0.1, 3), rep(0.1, dim.param - 3))
 # should put zeros for gamma1~3 when zero.inflation == 1 or 2.!!!!!!!!
     names(initial) <- aeg.names
     # initial[4] <- s2.x /ifelse(y1bar==0,1e-4, y1bar)
@@ -136,7 +133,7 @@ bzinb.base.reg <-
                   pZ = pZ, pW = pW,
                   n = n, se = as.integer(se), 
                   maxiter = as.integer(maxiter), tol = as.double(tol), 
-                  showFlag = as.integer(showFlag), zi = zero.inflation)
+                  showFlag = as.integer(showFlag), zi = as.integer(zi))
 tmp.em.out1 <<- em.out  
   em.out[[3]] <- matrix(em.out[[3]], dim.param, dim.param)
   names(em.out) <- c("param2",              # "y1", "y2", "freq", "n",
@@ -200,24 +197,22 @@ tmp.em.out <<- em.out
   }
   
   return(result)
-}
+  }
 
-#' @export
+#' @name bzinbReg
 #' @rdname bzinbReg
-#' @example 
-#' set.seed(1)
-#' dat <- rBzinbData()
-#' bzinb.reg(cbind(y1, y2) ~ ., ~ X1, data = dat)
-bzinb.reg <- function(mu.formula,       # mu.formula = cbind(Sepal.Length, Sepal.Width) ~ Species + Petal.Length
-                      nu.formula = ~ 1, # nu.formula = ~ Species + Petal.Width
-                      data,
-                      zero.inflation = c("both", "first", "second", "none"),
-                      tol = 1e-8, maxiter = 50000, showFlag = FALSE,
-                      vcov = FALSE, initial = NULL) {
-  
+#' @export
+bzinbReg.formula <- function(mu.formula,       # mu.formula = cbind(Sepal.Length, Sepal.Width) ~ Species + Petal.Length
+                              nu.formula = ~ 1, # nu.formula = ~ Species + Petal.Width
+                              data,
+                              zero.inflation = c("full", "co-ZI", "ZINB-NB", "NB-ZINB", "BNB"),
+                              tol = 1e-8, maxiter = 50000, showFlag = FALSE,
+                              vcov = FALSE, initial = NULL) {
+  cl <- match.call()
   formula = mu.formula
   formula[[3]] = rlang::expr(!!mu.formula[[3]] + !!nu.formula[[2]])
   if (missing(data)) data <- environment(formula)
+
   mf = model.frame(formula, data = data)
   mt <- attr(mf, "terms")
   mtNB <- terms(mu.formula, data = data)
@@ -228,17 +223,47 @@ bzinb.reg <- function(mu.formula,       # mu.formula = cbind(Sepal.Length, Sepal
   if (dim(y)[2] != 2) stop("The dimension of the outcome variable (in mu.formula) must be two.")
   if (any(y < 0)) stop("Negative outcome values are not allowed.")
   y[] <- as.integer(round(y, 0))  # y values in integers. 
-  zero.inflation = match.arg(zero.inflation)
-  zero.inflation = switch(zero.inflation, "both" = 3, "first" = 1, "second" = 2, "none" = 0)
+  zero.inflation = match.arg(zero.inflation, several.ok = FALSE)
+  zero.inflation = switch(zero.inflation, "full" = 4, "co-ZI" = 3, "ZINB-NB" = 2, "NB-ZINB" = 1, "BNB" = 0)
 
-  ### from here!!!
-  result <- try(bzinb.base.reg(y1 = y[, 1], y2 = y[, 2], 
-                               Z = Z, W = W, tol = tol, maxiter = maxiter, 
-                               showFlag = showFlag, vcov = vcov, initial = initial,
-                               zero.inflation = zero.inflation))
+  ### names and dimensions
+  pZ <- dim(Z)[2]
+  pW <- dim(W)[2]
+  
+  #dim_pi = 0 (for zi = 0), 1 (for zi = 1,2,3), 3 (for zi = 4)
+  dim_pi = 0
+  if (zero.inflation %in% c(1,2,3)) dim_pi = 1  
+  if (zero.inflation %in% 4) dim_pi = 3
+  dim.param <- 3 + 2 * pZ + dim_pi * pW
+  
+  if (zero.inflation== 0) zi = c(0, 0, 0)       # BNB        res 0   0   0
+  else if (zero.inflation== 1) zi = c(0, 1, 0)  # NB-ZINB    res 0   pi3 0
+  else if (zero.inflation== 2) zi = c(1, 0, 0)  # ZINB-NB    res pi2 0   0
+  else if (zero.inflation== 3) zi = c(0, 0, 1)  # co-ZI      res 0   0   pi4
+  else if (zero.inflation== 4) zi = c(1, 1, 1)  # full BZINB res pi2 pi3 pi4
+  zi = c(zi, zero.inflation, dim_pi)
+  
+  aeg.names <- c("scale0", "scale1", "scale2",                           #a0,1,2 = scale0, 1, 2
+                 paste0("NB1_", colnames(Z)),                #NB1,2 = eta1,2
+                 paste0("NB2_", colnames(Z)),
+                 if (zi[1]) paste0("ZI1_", colnames(W)),  #gamma1,2,3 = ZI1,2,co
+                 if (zi[2]) paste0("ZI2_", colnames(W)),
+                 if (zi[3]) paste0("ZI0_", colnames(W)))
+  
+  if (max(y)==0) {
+    result <- NA
+    class(result) <- "try-error"
+  } else {
+    result <- try(bzinb.base.reg(y1 = y[, 1], y2 = y[, 2], 
+                                 Z = Z, W = W, tol = tol, maxiter = maxiter, 
+                                 showFlag = showFlag, vcov = vcov, initial = initial,
+                                 zi = zi, aeg.names = aeg.names, 
+                                 dim.param = dim.param, pZ = pZ, pW = pW))
+  }
+  
   if (class(result)[1] == "try-error") {
-    result <- list(coefficients = matrix(rep(NA, 18),
-                                         ncol = 2, dimnames = list(abp.names, c("Estimate", "Std.err"))),
+    result <- list(coefficients = matrix(rep(NA, dim.param),
+                                         ncol = 2, dimnames = list(aeg.names, c("Estimate", "Std.err"))),
                    lik = NA,
                    iter = NA)
     if (vcov) {
@@ -246,6 +271,60 @@ bzinb.reg <- function(mu.formula,       # mu.formula = cbind(Sepal.Length, Sepal
       result$vcov = NA
     }
   }
+  result <- c(list(call = cl), result, 
+              zero.inflation = factor(zero.inflation, levels = 0:4, labels = c("BNB", "NB-ZINB", "ZINB-NB", "co-ZI", "full")))
+  class(result) <- "bzinbReg"
   return(result)
 }
 
+#' @name bzinbReg
+#' @export
+print.bzinbReg <- function (x, digits = max(3L, getOption("digits") - 3L), ...) {
+  cat("\nCall:\n", paste(deparse(x$call), sep = "\n", collapse = "\n"), 
+      "\n\n", sep = "")
+  if (length(x$coefficients[, "Estimate"])) {
+    nm = rownames(x$coefficients)
+    nm.nb1 = grep("^NB1", nm)
+    nm.nb2 = grep("^NB2", nm)
+    if (length(nm.nb1)) {
+      cat("Coefficients, negative binomial model:\n")
+      cat("  (variable 1) : ")
+      print.default(format(x$coefficients[nm.nb1, "Estimate"], digits = digits), 
+                    print.gap = 2L, quote = FALSE)
+      cat("  (variable 2) : ")
+      print.default(format(x$coefficients[nm.nb2, "Estimate"], digits = digits), 
+                    print.gap = 2L, quote = FALSE)
+    }
+    nm.zi = grep("^ZI", nm)
+    nm.zi1 = grep("^ZI1", nm)
+    nm.zi2 = grep("^ZI2", nm)
+    nm.zi3 = grep("^ZI3", nm)
+    if (length(nm.zi)) {
+      cat("Coefficients, zero-inflation model:\n")
+      if (length(nm.zi1)) {
+        cat("  (variable 1) : ")
+        print.default(format(x$coefficients[nm.zi, "Estimate"], digits = digits), 
+                      print.gap = 2L, quote = FALSE)
+      } 
+      if (length(nm.zi2)) {
+        cat("  (variable 2) : ")
+        print.default(format(x$coefficients[nm.zi, "Estimate"], digits = digits), 
+                      print.gap = 2L, quote = FALSE)
+      } 
+      if (length(nm.zi3)) {
+        cat("  (co-inflation) : ")
+        print.default(format(x$coefficients[nm.zi, "Estimate"], digits = digits), 
+                      print.gap = 2L, quote = FALSE)
+      }
+    }
+    nm.a = grep("^scale", nm)
+    if (length(nm.a)) {
+      cat("Coefficients, scales:\n")
+      print.default(format(x$coefficients[nm.a, "Estimate"], digits = digits), 
+                    print.gap = 2L, quote = FALSE)
+    }
+  }
+  else cat("No coefficients\n")
+  cat("\n")
+  invisible(x)
+}
