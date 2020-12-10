@@ -115,10 +115,9 @@ List em(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
     param[4] = param[3] * delta;
     
     param_diff = 0.0;
-    
     for(int i = 0;i < 9;i++)
     {
-      double dif = fabs(0.0 + param[i] - param_old[i]);
+      double dif = fabs(param[i] - param_old[i]); // for alpha's and beta's, original scale
       if( dif > param_diff) param_diff = dif;
     }
     

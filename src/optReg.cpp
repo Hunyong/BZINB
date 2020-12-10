@@ -133,19 +133,39 @@ void updateEpsilon(NumericMatrix &ZZ, NumericMatrix &expt, NumericVector &b21,
   
   // for (int i = 0; i < p * p; i++) V_eps[i] = 0.0;
   // for (int i = 0; i < p; i++) score[i] = 0.0;
-  
   // V_eta1 and score: 1 ~ p
   for (int i = 0; i < p; i++) {
+// Rcout << "expt1 " << i << ": ";
     for (int l = 0; l < n; l++) {
+// Rcout << expt[1, l] << " ";
       R02eps = (expt(1, l) + expt(3, l)) * b21[l];
       score(i,0) += ZZ[l + i * n] * (-R02eps + expt(11, l));
       for (int j = 0; j < p; j++) {
         V_eps(i, j) += ZZ[l + i * n] * R02eps * ZZ[l + j * n];
       }
     }
+// Rcout<< endl;
   }
+  
+// Rcout << "V_eps (the first update) = " << endl;
+// for (int i = 0; i < p; i++) {
+//   for (int j = 0; j < p; j++) {
+//     Rcout << V_eps(i, j) << " ";
+//   }
+//   Rcout << endl;
+// }
+  
+  
   // inverse of V_eps
   V_eps = inv(V_eps);
+
+// Rcout << "V_eps (after inverse) = " << endl;
+// for (int i = 0; i < p; i++) {
+//   for (int j = 0; j < p; j++) {
+//     Rcout << V_eps(i, j) << " ";
+//   }
+//   Rcout << endl;
+// }
 
   // updating
   for (int i = 0; i < p; i++) {
@@ -181,7 +201,7 @@ void updateGamma(NumericMatrix &WW, NumericMatrix &expt,
   //           W' [  - D_{pi_2 pi_1}] W   |  W' [D_pi_2 - D_{pi_2^2}] W  |  W' [   - D_{pi_2 pi_3}] W
   //           W' [  - D_{pi_3 pi_1}] W   |  W' [    - D_{pi_3 pi_2}] W  |  W' [D_pi_3- D_{pi_3^2}] W ]^-1
   double tmp;
-  if (zz[3] == 0) return;  // when zi==0, no need to update.
+  //if (zz[3] == 0) return;  // when zi==0, no need to update. When zz[3]==0, this function is not used.
   int q = zz[3]==4 ? p: 0; // when zi==4 (full BZINB), take care of all gamma1 ~ 3, so p is needed.
                             // otherwise, update is only needed for one of the gammas and p is set as zero.
   
@@ -199,7 +219,7 @@ void updateGamma(NumericMatrix &WW, NumericMatrix &expt,
     }
   }
 
-for (int i = 0; i < n; i++) 
+
   for (int i = 0; i < p; i++) {
 // Rcout << endl << "i = " << i << " ";
     for (int l = 0; l < n; l++) {

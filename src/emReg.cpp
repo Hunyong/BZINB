@@ -13,12 +13,12 @@ using namespace Rcpp;
 #define ITER_ALLOWANCE 100   // number of iterations allowed after finding the peak
 // #define EPSILON1 1e-7  //for E-steps -> tol
 #define EPSILON2 1e-7  //for M-steps
-#define EPSILON3 1e-5  //for M-steps (gamma)
+#define EPSILON3 1e-4  //for M-steps (gamma)
 // #define DEBUG4
 // #define DEBUG5
 // #define DEBUG7
 //#define DEBUG8
-#define DEBUG8g
+//#define DEBUG8g
 
 // 3. EM
 // [[Rcpp::export]]
@@ -129,11 +129,11 @@ List emReg(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
     if (iter[0] < 3) {
       ll_max = exptBar[0];
     }
-    for (int i = 0;i < dim_param;i++)
-    {
-      param_old[i] = param[i];
-// cout << "param [" << i << "] = " << param[i] << " ";
-    }
+    // for (int i = 0;i < dim_param;i++)
+    // {
+    //   param_old[i] = param[i];
+    //   cout << "param [" << i << "] = " << param[i] << " ";
+    // }
 
 
     if (iter[0] <= 1L) {
@@ -172,7 +172,7 @@ List emReg(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
       Rcout << p1[i] << " ";  
     }
     Rcout << endl; */
-
+    // Rcout << "E-step" << endl;
     dBvZINB_Expt_mat(xvec, yvec, ZZ, WW, n, pZ, pW,
                      alpha, b1, b2, p1, p2, p3, p4, 
                      expt, s_i, s_i_abp, info, 0, zi[3], expt_i);
@@ -251,7 +251,7 @@ List emReg(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
     for (int i = 0; i < 3; i++) {
       AEnew[i + pZ] = log(alpha[i]);
     }
-
+    // Rcout << "M-step: alpha, eta1" << endl;
     error = 1.0;
     while ((error >= EPSILON2)) {
       
@@ -290,21 +290,30 @@ List emReg(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
   }
   Rcout << endl;
 #endif
+  
+
 
       // update b1 correspondingly (b1 should be updated within the optimization loop)
       logLin(ZZ, eta1, n, pZ, 1, b1);
     } 
 
-
+    // Rcout << "M-step: epsilon" << endl;
     error = 1.0;
     while ((error >= EPSILON2)) {
       // update epsilon
 // Rcout << "error = "  << error << endl;
+Rcout << "V_eps = " << endl;
+for (int i = 0; i < pZ; i++) {
+  for (int j = 0; j < pZ; j++) {
+    Rcout << V_eps(i, j) << " ";
+  }
+  Rcout << endl;
+}
       updateEpsilon(ZZ, expt, b21, epsilon, 
                     epsNew, V_eps, Zbar, score_eps, n, pZ, error);
-#ifdef DEBUG8
-  Rcout << "   epsilon[0] = " << epsilon[0] << " error = "<< error << endl;    
-#endif
+//#ifdef DEBUG8
+Rcout << "   epsilon[0] = " << epsilon[0] << " error = "<< error << endl;    
+//#endif
       
       // update eta2 correspondingly
       for (int i = 0; i < pZ; i++) {
@@ -313,32 +322,32 @@ List emReg(NumericVector& param2, IntegerVector &xvec, IntegerVector &yvec,
       // update b21 correspondingly (b21 should be updated within the optimization loop)
       logLin(ZZ, epsilon, n, pZ, 1, b21);
     }
-    
+
     // After finding the optimal b21, update b2. (b2 need not be updated within the optimization loop)
     for (int i = 0; i < n; i++) {
       b2[i] = b21[i] * b1[i];
     }
-    
-int counter = 0L;
+    // Rcout << "M-step: gamma" << endl;
+    // int counter = 0L;
     error = zi[3] > 0 ? 1.0: 0.0;
     while ((error >= EPSILON3)) {
-counter++;
-// if (counter > 10000) break;
-if (counter >= 9990)
-  {
-    Rcout << "score_gam = " << endl;
-    for (int j =0; j < dim_gam; j++) {
-      Rcout << score_gam[j] << " ";
-    }
-    Rcout << endl;
-    Rcout << "V_gam = " << endl;
-    for (int i =0; i < dim_gam; i++) {
-      for (int j =0; j < dim_gam; j++) {
-        Rcout << V_gam[i + j * dim_gam] << " ";
-      }
-      Rcout << endl;
-    }
-  }
+    // counter++;
+    // if (counter > 10000) break;
+    // if (0)
+    //   {
+    //     Rcout << "score_gam = " << endl;
+    //     for (int j =0; j < dim_gam; j++) {
+    //       Rcout << score_gam[j] << " ";
+    //     }
+    //     Rcout << endl;
+    //     Rcout << "V_gam = " << endl;
+    //     for (int i =0; i < dim_gam; i++) {
+    //       for (int j =0; j < dim_gam; j++) {
+    //         Rcout << V_gam[i + j * dim_gam] << " ";
+    //       }
+    //       Rcout << endl;
+    //     }
+    //   }
     
       // update epsilon
       updateGamma(WW, expt, p2, p3, p4, gamma1, gamma2, gamma3, 
@@ -409,10 +418,15 @@ if (counter >= 9990)
     
     
     param_diff = 0.0;
-    for(int i = 0;i < dim_param;i++)
+    for(int i = 0;i < 3;i++)
     {
-      double dif = fabs(0.0 + param[i] - param_old[i]);
-      if( dif > param_diff) param_diff = dif;
+      double dif = fabs(0.0 + param[i] - param_old[i]); // for alpha's, original scale
+      if( dif > param_diff) param_diff = dif; // maximum difference
+    }
+    for(int i = 3;i < dim_param;i++)
+    {
+      double dif = fabs(0.0 + exp(param[i]) - exp(param_old[i])); // for others, exponential scale
+      if( dif > param_diff) param_diff = dif; // maximum difference
     }
     
     // updating max lik

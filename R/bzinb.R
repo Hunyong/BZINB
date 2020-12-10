@@ -438,7 +438,7 @@ bzinb <- function(xvec, yvec, initial = NULL, tol = 1e-8, maxiter = 50000, showF
   xvec = as.integer(round(xvec, digits = 0))
   yvec = as.integer(round(yvec, digits = 0))
   result <- try(bzinb.base(xvec, yvec, initial = initial, tol = tol, maxiter = maxiter, 
-                           showFlag = showFlag, vcov = vcov, zi = 3), silent = TRUE)
+                           showFlag = showFlag, vcov = vcov, zi = 4), silent = TRUE)
   if (class(result)[1] == "try-error") {
     result <- list(rho = matrix(rep(NA, 4),
                                 ncol = 2, dimnames = list(c("rho", "logit.rho"), c("Estimate", "Std.err"))),

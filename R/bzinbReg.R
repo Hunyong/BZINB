@@ -134,13 +134,13 @@ bzinb.base.reg <-
                   n = n, se = as.integer(se), 
                   maxiter = as.integer(maxiter), tol = as.double(tol), 
                   showFlag = as.integer(showFlag), zi = as.integer(zi))
-tmp.em.out1 <<- em.out  
+# tmp.em.out1 <<- em.out  
   em.out[[3]] <- matrix(em.out[[3]], dim.param, dim.param)
   names(em.out) <- c("param2",              # "y1", "y2", "freq", "n",
                      "expt", "info",        # "se",
                      "iter",                # "maxiter", "tol", "showFlag",
                      "nonconv", "trajectory") # , "bnb")
-tmp.em.out <<- em.out
+# tmp.em.out <<- em.out
   # overwriting the original object
   param = setNames(em.out$param2, aeg.names)
   expt  = setNames(em.out$expt, expt.names)
@@ -236,11 +236,7 @@ bzinbReg.formula <- function(mu.formula,       # mu.formula = cbind(Sepal.Length
   if (zero.inflation %in% 4) dim_pi = 3
   dim.param <- 3 + 2 * pZ + dim_pi * pW
   
-  if (zero.inflation== 0) zi = c(0, 0, 0)       # BNB        res 0   0   0
-  else if (zero.inflation== 1) zi = c(0, 1, 0)  # NB-ZINB    res 0   pi3 0
-  else if (zero.inflation== 2) zi = c(1, 0, 0)  # ZINB-NB    res pi2 0   0
-  else if (zero.inflation== 3) zi = c(0, 0, 1)  # co-ZI      res 0   0   pi4
-  else if (zero.inflation== 4) zi = c(1, 1, 1)  # full BZINB res pi2 pi3 pi4
+  zi = zi.fn(zero.inflation)
   zi = c(zi, zero.inflation, dim_pi)
   
   aeg.names <- c("scale0", "scale1", "scale2",                           #a0,1,2 = scale0, 1, 2
@@ -271,8 +267,9 @@ bzinbReg.formula <- function(mu.formula,       # mu.formula = cbind(Sepal.Length
       result$vcov = NA
     }
   }
+  
   result <- c(list(call = cl), result, 
-              zero.inflation = factor(zero.inflation, levels = 0:4, labels = c("BNB", "NB-ZINB", "ZINB-NB", "co-ZI", "full")))
+              zero.inflation = list(factor(zero.inflation, levels = 0:4, labels = c("BNB", "NB-ZINB", "ZINB-NB", "co-ZI", "full"))))
   class(result) <- "bzinbReg"
   return(result)
 }
@@ -283,48 +280,68 @@ print.bzinbReg <- function (x, digits = max(3L, getOption("digits") - 3L), ...) 
   cat("\nCall:\n", paste(deparse(x$call), sep = "\n", collapse = "\n"), 
       "\n\n", sep = "")
   if (length(x$coefficients[, "Estimate"])) {
+    
+    # NB model
     nm = rownames(x$coefficients)
-    nm.nb1 = grep("^NB1", nm)
-    nm.nb2 = grep("^NB2", nm)
-    if (length(nm.nb1)) {
-      cat("Coefficients, negative binomial model:\n")
-      cat("  (variable 1) : ")
-      print.default(format(x$coefficients[nm.nb1, "Estimate"], digits = digits), 
-                    print.gap = 2L, quote = FALSE)
-      cat("  (variable 2) : ")
-      print.default(format(x$coefficients[nm.nb2, "Estimate"], digits = digits), 
-                    print.gap = 2L, quote = FALSE)
-    }
-    nm.zi = grep("^ZI", nm)
-    nm.zi1 = grep("^ZI1", nm)
-    nm.zi2 = grep("^ZI2", nm)
-    nm.zi3 = grep("^ZI3", nm)
-    if (length(nm.zi)) {
-      cat("Coefficients, zero-inflation model:\n")
-      if (length(nm.zi1)) {
-        cat("  (variable 1) : ")
-        print.default(format(x$coefficients[nm.zi, "Estimate"], digits = digits), 
-                      print.gap = 2L, quote = FALSE)
-      } 
-      if (length(nm.zi2)) {
-        cat("  (variable 2) : ")
-        print.default(format(x$coefficients[nm.zi, "Estimate"], digits = digits), 
-                      print.gap = 2L, quote = FALSE)
-      } 
-      if (length(nm.zi3)) {
-        cat("  (co-inflation) : ")
-        print.default(format(x$coefficients[nm.zi, "Estimate"], digits = digits), 
-                      print.gap = 2L, quote = FALSE)
+    nm.nb1 = grep("^NB1", nm, value = TRUE)
+    nm.nb2 = grep("^NB2", nm, value = TRUE)
+    nm.nb.print = gsub("^NB1_", "", nm.nb1)
+    
+    nb.coef = 
+      rbind(`outcome 1` = x$coefficients[nm.nb1, "Estimate"],
+            `outcome 2` = x$coefficients[nm.nb2, "Estimate"])
+    colnames(nb.coef) = nm.nb.print
+    cat("Coefficients, negative binomial model:\n")
+    print.default(format(nb.coef, digits = digits), print.gap = 2L, quote = FALSE)
+    
+    # ZI model
+    zero.inflation = switch(as.character(x$zero.inflation), 
+                            "full" = 4, "co-ZI" = 3, "ZINB-NB" = 2, "NB-ZINB" = 1, "BNB" = 0)
+    zi = zi.fn(zero.inflation)
+    if (zero.inflation) {
+      nm.zi = grep("^ZI", nm)
+      if (zi[1]) {
+        nm.zi1 = grep("^ZI1", nm, value = TRUE) 
+        nm.zi.print = gsub("^ZI1_", "", nm.zi1)
       }
+      if (zi[2]) {
+        nm.zi2 = grep("^ZI2", nm, value = TRUE)
+        nm.zi.print = gsub("^ZI2_", "", nm.zi2)
+      }
+      if (zi[3]) {
+        nm.zi0 = grep("^ZI0", nm, value = TRUE)
+        nm.zi.print = gsub("^ZI0_", "", nm.zi0)
+        nm.zi.print = nm.zi.print[1:(length(nm.zi.print)/3)]
+      }
+      
+      zi.coef = 
+        rbind(`co-zero-inflation`    = if (zi[3]) x$coefficients[nm.zi0, "Estimate"],
+              `outcome 1` = if (zi[1]) x$coefficients[nm.zi1, "Estimate"],
+              `outcome 2` = if (zi[2]) x$coefficients[nm.zi2, "Estimate"])
+      colnames(zi.coef) = nm.zi.print
+      cat("\nCoefficients, zero-inflation model:\n")
+        print.default(format(zi.coef, digits = digits), print.gap = 2L, quote = FALSE)
     }
+    
     nm.a = grep("^scale", nm)
     if (length(nm.a)) {
-      cat("Coefficients, scales:\n")
-      print.default(format(x$coefficients[nm.a, "Estimate"], digits = digits), 
+      cat("\nCoefficients, scales:\n")
+      print.default(format(setNames(x$coefficients[nm.a, "Estimate"], 
+                                    c("co-scale", "scale (outcome 1)", "scale (outcome 2)")), 
+                           digits = digits), 
                     print.gap = 2L, quote = FALSE)
     }
   }
   else cat("No coefficients\n")
   cat("\n")
   invisible(x)
+}
+
+zi.fn = function(zero.inflation = 0:4) {
+  if (zero.inflation == 0) zi = c(0, 0, 0)       # BNB        res 0   0   0
+  else if (zero.inflation == 1) zi = c(0, 1, 0)  # NB-ZINB    res 0   pi3 0
+  else if (zero.inflation == 2) zi = c(1, 0, 0)  # ZINB-NB    res pi2 0   0
+  else if (zero.inflation == 3) zi = c(0, 0, 1)  # co-ZI      res 0   0   pi4
+  else if (zero.inflation == 4) zi = c(1, 1, 1)  # full BZINB res pi2 pi3 pi4
+  return(zi)
 }
